@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BP Estimation App</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --normal: #4caf50;
+            --elevated: #ff9800;
+            --stage1: #ff5722;
+            --stage2: #f44336;
+            --crisis: #9c27b0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: var(--dark);
+            font-size: 1.1rem;
+        }
+        
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn {
+                padding: 15px 20px;
+                font-size: 1.1rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .mobile-warning {
+                display: block !important;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-title i {
+            margin-right: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            min-height: 300px;
+        }
+        
+        #video-preview {
+            width: 100%;
+            display: block;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+        
+        .video-container.active .video-overlay {
+            opacity: 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #3aa8d0;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #d11467;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result-container {
+            display: none;
+        }
+        
+        .bp-result {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .bp-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .bp-category {
+            font-size: 1.5rem;
+            font-weight: 600;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .category-normal {
+            background: var(--normal);
+            color: white;
+        }
+        
+        .category-elevated {
+            background: var(--elevated);
+            color: white;
+        }
+        
+        .category-stage1 {
+            background: var(--stage1);
+            color: white;
+        }
+        
+        .category-stage2 {
+            background: var(--stage2);
+            color: white;
+        }
+        
+        .category-crisis {
+            background: var(--crisis);
+            color: white;
+        }
+        
+        .bp-description {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        
+        .chart-container {
+            height: 250px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .record-timer {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--danger);
+            margin: 10px 0;
+            display: none;
+        }
+
+        /* Mobile-specific styles */
+        .mobile-warning {
+            display: none;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #856404;
+        }
+
+        .flashlight-help {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .flashlight-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .flashlight-step {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .flashlight-step i {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .flashlight-step h4 {
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .flashlight-step p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+
+        .category-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .category-color.normal { background: var(--normal); }
+        .category-color.elevated { background: var(--elevated); }
+        .category-color.stage1 { background: var(--stage1); }
+        .category-color.stage2 { background: var(--stage2); }
+        .category-color.crisis { background: var(--crisis); }
+
+        .category-name {
+            font-weight: 600;
+            min-width: 200px;
+        }
+
+        .category-range {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .disclaimer {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .camera-options {
+            margin: 15px 0;
+        }
+
+        .camera-toggle {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            margin-right: 10px;
+        }
+
+        .camera-toggle.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .camera-toggle i {
+            margin-right: 8px;
+        }
+
+        .recording-info {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .flashlight-toggle {
+            background: #ffeb3b;
+            color: #333;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .flashlight-toggle i {
+            margin-right: 8px;
+        }
+
+        .flashlight-toggle.active {
+            background: #ffc107;
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+        }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-heartbeat"></i> Blood Pressure Estimation</h1>
+            <p class="subtitle">Record a 10-second fingertip video to estimate your blood pressure category</p>
+        </header>
+
+        <div class="mobile-warning">
+            <strong>📱 Mobile Tips:</strong> For best results, use in a well-lit room or enable flashlight below.
+        </div>
+        
+        <div class="app-container">
+            <div class="input-section">
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-user"></i> Demographic Information</h2>
+                    
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" min="18" max="100" placeholder="Enter your age">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="height">Height (cm)</label>
+                        <input type="number" id="height" min="100" max="250" placeholder="Enter your height in cm">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weight">Weight (kg)</label>
+                        <input type="number" id="weight" min="30" max="300" placeholder="Enter your weight in kg">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bmi">BMI (Auto-calculated)</label>
+                        <input type="number" id="bmi" min="10" max="60" step="0.1" placeholder="BMI will be calculated automatically" readonly>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-video"></i> Video Recording</h2>
+                    
+                    <div class="instructions">
+                        <p><strong>Instructions:</strong></p>
+                        <ol>
+                            <li>Click "Start Camera" to enable your camera and flashlight</li>
+                            <li>Place your fingertip gently over the camera lens</li>
+                            <li>Ensure good lighting and minimal movement</li>
+                            <li>Click "Start Recording" and record for <strong>10 seconds</strong></li>
+                            <li>Click "Process Video" to analyze</li>
+                        </ol>
+                    </div>
+
+                    <div class="recording-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Recording Time:</strong> Only 10 seconds required for analysis
+                    </div>
+
+                    <div class="flashlight-help">
+                        <p><strong>💡 Flashlight Control:</strong></p>
+                        <button class="flashlight-toggle" id="flashlight-toggle">
+                            <i class="fas fa-lightbulb"></i> Turn On Flashlight
+                        </button>
+                        <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+                            The flashlight will automatically turn on when you start the camera
+                        </p>
+                    </div>
+
+                    <div class="camera-options">
+                        <span style="font-weight: 600; margin-right: 10px;">Camera:</span>
+                        <div class="camera-toggle active" id="rear-camera">
+                            <i class="fas fa-camera"></i> Rear Camera
+                        </div>
+                        <div class="camera-toggle" id="front-camera">
+                            <i class="fas fa-user"></i> Front Camera
+                        </div>
+                    </div>
+                    
+                    <div class="video-container" id="video-container">
+                        <video id="video-preview" autoplay muted playsinline></video>
+                        <div class="video-overlay">
+                            <i class="fas fa-fingerprint fa-3x"></i>
+                            <p>Position your fingertip here</p>
+                            <p style="margin-top: 10px; font-size: 0.9rem;">Click "Start Camera" to begin</p>
+                        </div>
+                    </div>
+                    
+                    <div class="record-timer" id="record-timer">Recording: 0s</div>
+                    
+                    <div class="controls">
+                        <button id="start-camera" class="btn btn-primary">
+                            <i class="fas fa-camera"></i> Start Camera
+                        </button>
+                        <button id="start-record" class="btn btn-success" disabled>
+                            <i class="fas fa-record-vinyl"></i> Start Recording
+                        </button>
+                        <button id="stop-record" class="btn btn-danger" disabled>
+                            <i class="fas fa-stop"></i> Stop Recording
+                        </button>
+                    </div>
+                    
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress" id="record-progress"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.8rem; color: #666;">
+                            <span>0s</span>
+                            <span>10s</span>
+                        </div>
+                    </div>
+                    
+                    <button id="process-video" class="btn btn-primary" disabled style="width: 100%;">
+                        <i class="fas fa-cogs"></i> Process Video & Estimate BP
+                    </button>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-chart-line"></i> Results</h2>
+                    
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>Processing your video and estimating blood pressure...</p>
+                        <p>This may take a few seconds</p>
+                    </div>
+                    
+                    <div class="error" id="error-message"></div>
+                    <div class="success" id="success-message"></div>
+                    
+                    <div class="result-container" id="result-container">
+                        <div class="bp-result">
+                            <h3>Blood Pressure Estimate</h3>
+                            <div class="bp-value" id="bp-value">--/--</div>
+                            <div class="bp-category" id="bp-category">Unknown</div>
+                            <p class="bp-description" id="bp-description"></p>
+                        </div>
+                        
+                        <h3>PPG Signal</h3>
+                        <div class="chart-container">
+                            <canvas id="ppg-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-info-circle"></i> Blood Pressure Categories</h2>
+                    
+                    <div class="bp-category-info">
+                        <div class="category-item">
+                            <span class="category-color normal"></span>
+                            <span class="category-name">Normal</span>
+                            <span class="category-range">SBP < 120 and DBP < 80</span>
+                        </div>
+                        <div class="category-item">
+                            <span class="category-color elevated"></span>
+                            <span class="category-name">Elevated</span>
+                            <span class="category-range">SBP 120-129 and DBP < 80</span>
+                        </div>
+                        <div class="category-item">
+                            <span class="category-color stage1"></span>
+                            <span class="category-name">Stage 1 Hypertension</span>
+                            <span class="category-range">SBP 130-139 or DBP 80-89</span>
+                        </div>
+                        <div class="category-item">
+                            <span class="category-color stage2"></span>
+                            <span class="category-name">Stage 2 Hypertension</span>
+                            <span class="category-range">SBP 140-179 or DBP 90-119</span>
+                        </div>
+                        <div class="category-item">
+                            <span class="category-color crisis"></span>
+                            <span class="category-name">Hypertensive Crisis</span>
+                            <span class="category-range">SBP ≥ 180 or DBP ≥ 120</span>
+                        </div>
+                    </div>
+                    
+                    <div class="disclaimer">
+                        <p><strong>Disclaimer:</strong> This application provides an estimate only and is not a substitute for professional medical diagnosis. Consult a healthcare provider for accurate blood pressure measurement.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const videoPreview = document.getElementById('video-preview');
+        const videoContainer = document.getElementById('video-container');
+        const startCameraBtn = document.getElementById('start-camera');
+        const startRecordBtn = document.getElementById('start-record');
+        const stopRecordBtn = document.getElementById('stop-record');
+        const processVideoBtn = document.getElementById('process-video');
+        const recordTimer = document.getElementById('record-timer');
+        const recordProgress = document.getElementById('record-progress');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        const resultContainer = document.getElementById('result-container');
+        const bpValue = document.getElementById('bp-value');
+        const bpCategory = document.getElementById('bp-category');
+        const bpDescription = document.getElementById('bp-description');
+        const ageInput = document.getElementById('age');
+        const heightInput = document.getElementById('height');
+        const weightInput = document.getElementById('weight');
+        const bmiInput = document.getElementById('bmi');
+        const rearCameraBtn = document.getElementById('rear-camera');
+        const frontCameraBtn = document.getElementById('front-camera');
+        const flashlightToggle = document.getElementById('flashlight-toggle');
+        
+        // Variables
+        let mediaRecorder;
+        let recordedChunks = [];
+        let stream;
+        let recording = false;
+        let recordStartTime;
+        let timerInterval;
+        let ppgChart;
+        let currentFacingMode = 'environment'; // Default to rear camera
+        let flashlightEnabled = false;
+        let torchSupported = false;
+        let videoTrack;
+        const MAX_RECORDING_TIME = 10; // 10 seconds maximum recording
+        
+        // Mobile detection
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // Show mobile warning if on mobile
+        if (isMobile) {
+            document.querySelector('.mobile-warning').style.display = 'block';
+        }
+        
+        // Check if torch/flashlight is supported
+        async function checkTorchSupport() {
+            if (!('mediaDevices' in navigator) || !('getUserMedia' in navigator.mediaDevices)) {
+                return false;
+            }
+            
+            try {
+                // Test if we can get a stream with torch
+                const testStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        advanced: [{ torch: true }]
+                    }
+                });
+                
+                // Check if any track has torch capability
+                const tracks = testStream.getVideoTracks();
+                for (const track of tracks) {
+                    const capabilities = track.getCapabilities();
+                    if (capabilities.torch !== undefined) {
+                        torchSupported = true;
+                        break;
+                    }
+                }
+                
+                // Stop the test stream
+                testStream.getTracks().forEach(track => track.stop());
+                
+                return torchSupported;
+            } catch (error) {
+                console.log('Torch not supported:', error);
+                return false;
+            }
+        }
+        
+        // Initialize torch support check
+        checkTorchSupport().then(supported => {
+            if (supported) {
+                console.log('✅ Flashlight/torch is supported');
+                flashlightToggle.style.display = 'inline-flex';
+            } else {
+                console.log('❌ Flashlight/torch is not supported');
+                flashlightToggle.style.display = 'none';
+            }
+        });
+        
+        // Flashlight toggle functionality
+        flashlightToggle.addEventListener('click', async () => {
+            if (!stream || !videoTrack) {
+                showError('Please start the camera first');
+                return;
+            }
+            
+            try {
+                if (flashlightEnabled) {
+                    // Turn off flashlight
+                    await videoTrack.applyConstraints({
+                        advanced: [{ torch: false }]
+                    });
+                    flashlightEnabled = false;
+                    flashlightToggle.innerHTML = '<i class="fas fa-lightbulb"></i> Turn On Flashlight';
+                    flashlightToggle.classList.remove('active');
+                    showSuccess('Flashlight turned off');
+                } else {
+                    // Turn on flashlight
+                    await videoTrack.applyConstraints({
+                        advanced: [{ torch: true }]
+                    });
+                    flashlightEnabled = true;
+                    flashlightToggle.innerHTML = '<i class="fas fa-lightbulb"></i> Turn Off Flashlight';
+                    flashlightToggle.classList.add('active');
+                    showSuccess('Flashlight turned on');
+                }
+            } catch (error) {
+                console.error('Error toggling flashlight:', error);
+                showError('Failed to toggle flashlight. This feature may not be supported on your device.');
+            }
+        });
+        
+        // Camera toggle functionality
+        rearCameraBtn.addEventListener('click', () => {
+            if (currentFacingMode !== 'environment') {
+                currentFacingMode = 'environment';
+                rearCameraBtn.classList.add('active');
+                frontCameraBtn.classList.remove('active');
+                // Restart camera with new facing mode
+                if (stream) {
+                    restartCamera();
+                }
+            }
+        });
+        
+        frontCameraBtn.addEventListener('click', () => {
+            if (currentFacingMode !== 'user') {
+                currentFacingMode = 'user';
+                frontCameraBtn.classList.add('active');
+                rearCameraBtn.classList.remove('active');
+                // Restart camera with new facing mode
+                if (stream) {
+                    restartCamera();
+                }
+            }
+        });
+        
+        // Calculate BMI when height or weight changes
+        heightInput.addEventListener('input', calculateBMI);
+        weightInput.addEventListener('input', calculateBMI);
+        
+        function calculateBMI() {
+            const height = parseFloat(heightInput.value) / 100; // Convert to meters
+            const weight = parseFloat(weightInput.value);
+            
+            if (height > 0 && weight > 0) {
+                const bmi = weight / (height * height);
+                bmiInput.value = bmi.toFixed(1);
+            }
+        }
+        
+        // Start camera
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                const constraints = {
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: currentFacingMode
+                    }, 
+                    audio: false 
+                };
+                
+                // Add torch support if available and using rear camera
+                if (torchSupported && currentFacingMode === 'environment') {
+                    constraints.video.advanced = [{ torch: true }];
+                }
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoPreview.srcObject = stream;
+                startRecordBtn.disabled = false;
+                startCameraBtn.disabled = true;
+                successMessage.style.display = 'none';
+                errorMessage.style.display = 'none';
+                videoContainer.classList.add('active');
+                
+                // Get video track for flashlight control
+                videoTrack = stream.getVideoTracks()[0];
+                
+                // Auto-enable flashlight if supported and using rear camera
+                if (torchSupported && currentFacingMode === 'environment') {
+                    try {
+                        await videoTrack.applyConstraints({
+                            advanced: [{ torch: true }]
+                        });
+                        flashlightEnabled = true;
+                        flashlightToggle.innerHTML = '<i class="fas fa-lightbulb"></i> Turn Off Flashlight';
+                        flashlightToggle.classList.add('active');
+                        showSuccess('Camera started! Flashlight automatically enabled.');
+                    } catch (error) {
+                        console.error('Error enabling flashlight:', error);
+                        showSuccess('Camera started! Position your fingertip over the camera.');
+                    }
+                } else {
+                    showSuccess('Camera started! Position your fingertip over the camera.');
+                }
+                
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                if (isMobile) {
+                    showError('Could not access camera. Please ensure you have granted camera permissions and try in a well-lit area.');
+                } else {
+                    showError('Could not access camera. Please ensure you have granted camera permissions.');
+                }
+            }
+        });
+        
+        // Restart camera with new facing mode
+        async function restartCamera() {
+            if (stream) {
+                // Stop all tracks
+                stream.getTracks().forEach(track => track.stop());
+                flashlightEnabled = false;
+                flashlightToggle.innerHTML = '<i class="fas fa-lightbulb"></i> Turn On Flashlight';
+                flashlightToggle.classList.remove('active');
+            }
+            
+            try {
+                const constraints = {
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: currentFacingMode
+                    }, 
+                    audio: false 
+                };
+                
+                // Add torch support if available and using rear camera
+                if (torchSupported && currentFacingMode === 'environment') {
+                    constraints.video.advanced = [{ torch: true }];
+                }
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoPreview.srcObject = stream;
+                
+                // Get video track for flashlight control
+                videoTrack = stream.getVideoTracks()[0];
+                
+                // Auto-enable flashlight if supported and using rear camera
+                if (torchSupported && currentFacingMode === 'environment') {
+                    try {
+                        await videoTrack.applyConstraints({
+                            advanced: [{ torch: true }]
+                        });
+                        flashlightEnabled = true;
+                        flashlightToggle.innerHTML = '<i class="fas fa-lightbulb"></i> Turn Off Flashlight';
+                        flashlightToggle.classList.add('active');
+                        showSuccess(`Switched to rear camera with flashlight enabled`);
+                    } catch (error) {
+                        console.error('Error enabling flashlight:', error);
+                        showSuccess(`Switched to ${currentFacingMode === 'environment' ? 'rear' : 'front'} camera`);
+                    }
+                } else {
+                    showSuccess(`Switched to ${currentFacingMode === 'environment' ? 'rear' : 'front'} camera`);
+                }
+            } catch (err) {
+                console.error('Error switching camera:', err);
+                showError('Could not switch camera. Please try again.');
+            }
+        }
+        
+        // Start recording
+        startRecordBtn.addEventListener('click', () => {
+            if (!stream) return;
+            
+            recordedChunks = [];
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+            
+            mediaRecorder.onstop = () => {
+                recording = false;
+                startRecordBtn.disabled = false;
+                stopRecordBtn.disabled = true;
+                processVideoBtn.disabled = false;
+                recordTimer.style.display = 'none';
+                clearInterval(timerInterval);
+                
+                // Show success message
+                showSuccess('10-second video recorded successfully! Click "Process Video" to analyze.');
+            };
+            
+            mediaRecorder.start();
+            recording = true;
+            startRecordBtn.disabled = true;
+            stopRecordBtn.disabled = false;
+            recordTimer.style.display = 'block';
+            recordStartTime = Date.now();
+            
+            // Update timer and progress
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
+                recordTimer.textContent = `Recording: ${elapsed}s`;
+                
+                // Update progress bar (max 10 seconds)
+                const progressPercent = Math.min((elapsed / MAX_RECORDING_TIME) * 100, 100);
+                recordProgress.style.width = `${progressPercent}%`;
+                
+                // Auto-stop at 10 seconds
+                if (elapsed >= MAX_RECORDING_TIME) {
+                    stopRecording();
+                }
+            }, 1000);
+        });
+        
+        // Stop recording
+        stopRecordBtn.addEventListener('click', stopRecording);
+        
+        function stopRecording() {
+            if (mediaRecorder && recording) {
+                mediaRecorder.stop();
+            }
+        }
+        
+        // Process video
+        processVideoBtn.addEventListener('click', async () => {
+            // Validate inputs
+            if (!ageInput.value || !heightInput.value || !weightInput.value) {
+                showError('Please fill in all demographic information.');
+                return;
+            }
+            
+            if (recordedChunks.length === 0) {
+                showError('Please record a video first.');
+                return;
+            }
+            
+            // Validate age range
+            const age = parseInt(ageInput.value);
+            if (age < 18 || age > 100) {
+                showError('Age must be between 18 and 100.');
+                return;
+            }
+            
+            // Show loading, hide results and messages
+            loading.style.display = 'block';
+            resultContainer.style.display = 'none';
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            // Create blob from recorded chunks
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const formData = new FormData();
+            formData.append('video', blob, 'recording.webm');
+            formData.append('age', ageInput.value);
+            formData.append('height', heightInput.value);
+            formData.append('weight', weightInput.value);
+            formData.append('bmi', bmiInput.value || calculateBMIFromInputs());
+            
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data);
+                    showSuccess('Analysis completed successfully!');
+                } else {
+                    showError(data.error || 'An error occurred during processing.');
+                }
+            } catch (err) {
+                console.error('Error processing video:', err);
+                showError('Failed to process video. Please try again.');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        function calculateBMIFromInputs() {
+            const height = parseFloat(heightInput.value) / 100;
+            const weight = parseFloat(weightInput.value);
+            return (weight / (height * height)).toFixed(1);
+        }
+        
+        function displayResults(data) {
+            // Update BP values and category
+            bpValue.textContent = `${data.sbp}/${data.dbp}`;
+            bpCategory.textContent = data.category;
+            bpCategory.className = 'bp-category category-' + data.category_class;
+            bpDescription.textContent = data.description;
+            
+            // Create or update PPG chart
+            const ctx = document.getElementById('ppg-chart').getContext('2d');
+            
+            if (ppgChart) {
+                ppgChart.destroy();
+            }
+            
+            ppgChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: data.ppg_signal.length}, (_, i) => i),
+                    datasets: [{
+                        label: 'PPG Signal',
+                        data: data.ppg_signal,
+                        borderColor: '#4361ee',
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        borderWidth: 1,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time (frames)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Amplitude'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Show results
+            resultContainer.style.display = 'block';
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+        
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+        
+        // Clean up flashlight when leaving the page
+        window.addEventListener('beforeunload', () => {
+            if (stream && videoTrack && flashlightEnabled) {
+                try {
+                    videoTrack.applyConstraints({
+                        advanced: [{ torch: false }]
+                    });
+                } catch (error) {
+                    console.error('Error turning off flashlight:', error);
+                }
+            }
+        });
+        
+        // Initialize BMI calculation if height and weight are already filled
+        if (heightInput.value && weightInput.value) {
+            calculateBMI();
+        }
+    </script>
+</body>
+</html>

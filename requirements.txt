@@ -1,0 +1,8 @@
+# requirements.txt
+Flask
+tensorflow
+opencv-python
+numpy
+scipy
+Werkzeug
+heartpy

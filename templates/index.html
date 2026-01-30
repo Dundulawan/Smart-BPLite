@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Monitor - BP Analysis</title>
+    <style>
+        :root {
+            --primary: #4DB6AC;
+            --primary-dark: #26A69A;
+            --accent: #5C6BC0;
+            --success: #66BB6A;
+            --danger: #EF5350;
+            --warning: #FFA726;
+            --bg-primary: #E8F5F0;
+            --bg-secondary: #FFFFFF;
+            --text-primary: #2C3E50;
+            --text-secondary: #7F8C8D;
+            --border: #E0E6ED;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding-bottom: 80px;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .app-header {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        .greeting {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #E91E63, #9C27B0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        /* Pages Container */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-content {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Home Page - Scan Button */
+        .scan-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .scan-button {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4DB6AC, #26A69A);
+            border: none;
+            box-shadow: 0 15px 40px rgba(77, 182, 172, 0.4);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+
+        .scan-button::before {
+            content: '';
+            position: absolute;
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            background: rgba(77, 182, 172, 0.2);
+            z-index: -1;
+        }
+
+        .scan-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 50px rgba(77, 182, 172, 0.5);
+        }
+
+        .scan-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+
+        .scan-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        /* Metrics Cards */
+        .metrics-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .metrics-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .metric-card {
+            background: var(--bg-primary);
+            border-radius: 15px;
+            padding: 20px 10px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .metric-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 8px 0;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .metric-status {
+            font-size: 0.85rem;
+            color: var(--success);
+            margin-top: 5px;
+        }
+
+        /* Diary/History Page */
+        .calendar-header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-nav button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        .calendar-month {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+
+        .calendar-day-name {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            padding: 8px 0;
+            font-weight: 600;
+        }
+
+        .calendar-day {
+            padding: 12px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background: var(--bg-primary);
+        }
+
+        .calendar-day.has-data::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--primary);
+        }
+
+        .calendar-day.selected {
+            background: var(--primary);
+            color: white;
+        }
+
+        .calendar-day.other-month {
+            color: #ccc;
+        }
+
+        /* Measurement Detail */
+        .measurement-detail {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .detail-time {
+            color: var(--text-secondary);
+        }
+
+        .bp-readings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .reading-card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .reading-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .reading-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .reading-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .reading-unit {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .vital-item {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .vital-icon {
+            font-size: 1.8rem;
+        }
+
+        .vital-info {
+            flex: 1;
+        }
+
+        .vital-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .vital-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Learn Page */
+        .learn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .learn-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .learn-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .learn-image {
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        .learn-card:nth-child(2) .learn-image {
+            background: linear-gradient(135deg, #4DB6AC 0%, #26A69A 100%);
+        }
+
+        .learn-card:nth-child(3) .learn-image {
+            background: linear-gradient(135deg, #5C6BC0 0%, #3F51B5 100%);
+        }
+
+        .learn-card:nth-child(4) .learn-image {
+            background: linear-gradient(135deg, #FF7043 0%, #F4511E 100%);
+        }
+
+        .learn-card:nth-child(5) .learn-image {
+            background: linear-gradient(135deg, #4DB6AC 0%, #00897B 100%);
+        }
+
+        .learn-card:nth-child(6) .learn-image {
+            background: linear-gradient(135deg, #5C6BC0 0%, #3949AB 100%);
+        }
+
+        .learn-content {
+            padding: 15px;
+        }
+
+        .learn-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .learn-btn {
+            background: var(--bg-primary);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* Education Detail Modal */
+        .edu-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .edu-modal.active {
+            display: block;
+        }
+
+        .edu-modal-content {
+            background: white;
+            max-width: 600px;
+            margin: 20px auto;
+            border-radius: 20px;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .edu-modal-header {
+            background: linear-gradient(135deg, #4DB6AC, #26A69A);
+            color: white;
+            padding: 30px 20px;
+            position: relative;
+        }
+
+        .edu-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .edu-modal-body {
+            padding: 30px 20px;
+            line-height: 1.8;
+        }
+
+        .edu-modal-body h3 {
+            margin: 25px 0 15px;
+            color: var(--primary);
+        }
+
+        .edu-modal-body p {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        /* Scan/Recording Page */
+        .recording-page {
+            padding: 20px;
+        }
+
+        .recording-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .recording-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .recording-subtitle {
+            color: var(--text-secondary);
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .video-container {
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 4/3;
+            margin: 20px 0;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: opacity 0.3s;
+        }
+
+        .video-container.active .video-overlay {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .finger-guide {
+            width: 120px;
+            height: 120px;
+            border: 4px dashed rgba(77, 182, 172, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--danger);
+            margin: 15px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 8px 0;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #66BB6A, #43A047);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #EF5350, #E53935);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #78909C, #546E7A);
+            color: white;
+        }
+
+        .btn-warning.on {
+            background: linear-gradient(135deg, #FFA726, #FB8C00);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .message-error {
+            background: #FFEBEE;
+            color: #C62828;
+        }
+
+        .message-success {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid var(--border);
+            border-top: 6px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+            border: none;
+            background: none;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-item.active .nav-icon {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: var(--bg-primary);
+            transition: all 0.3s;
+        }
+
+        .nav-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .metric-card {
+                padding: 15px 8px;
+            }
+
+            .scan-button {
+                width: 240px;
+                height: 240px;
+            }
+
+            .scan-button::before {
+                width: 280px;
+                height: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-left">
+            <button class="menu-btn">☰</button>
+            <div class="greeting">Hello,</div>
+        </div>
+        <div class="user-avatar">U</div>
+    </div>
+
+    <!-- Home Page -->
+    <div class="page active" id="home-page">
+        <div class="scan-section">
+            <button class="scan-button" id="scan-now-btn">
+                <div class="scan-icon">👆</div>
+                <div class="scan-text">Scan now</div>
+            </button>
+        </div>
+
+        <div class="metrics-section">
+            <div class="metrics-title">
+                <span>📊</span>
+                <span>My metrics</span>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">💓</div>
+                    <div class="metric-value" id="home-pulse">--</div>
+                    <div class="metric-label">Pulse</div>
+                    <div class="metric-status">bpm</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">📈</div>
+                    <div class="metric-value" id="home-hrv">--</div>
+                    <div class="metric-label">HRV</div>
+                    <div class="metric-status">ms</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-value" id="home-stress">--</div>
+                    <div class="metric-label">Stress</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan/Recording Page -->
+    <div class="page" id="scan-page">
+        <div class="recording-page">
+            <div class="recording-header">
+                <div class="recording-title">Blood Pressure Measurement</div>
+                <div class="recording-subtitle">Please fill your information and record</div>
+            </div>
+
+            <div class="form-card">
+                <div class="form-group">
+                    <label>Age (years)</label>
+                    <input type="number" id="age" placeholder="e.g., 30" min="18" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Height (cm)</label>
+                    <input type="number" id="height" placeholder="e.g., 170" min="100" max="250">
+                </div>
+                <div class="form-group">
+                    <label>Weight (kg)</label>
+                    <input type="number" id="weight" placeholder="e.g., 70" min="30" max="300">
+                </div>
+                <div class="form-group">
+                    <label>BMI (calculated)</label>
+                    <input type="text" id="bmi" readonly placeholder="Auto-calculated">
+                </div>
+            </div>
+
+            <div class="form-card">
+                <div class="video-container" id="video-container">
+                    <video id="video" autoplay muted playsinline></video>
+                    <div class="video-overlay">
+                        <div class="finger-guide">☝️</div>
+                        <h3>Place fingertip here</h3>
+                    </div>
+                </div>
+
+                <div class="timer" id="timer">Recording: 0s</div>
+
+                <div class="progress-bar">
+                    <div class="progress" id="progress"></div>
+                </div>
+
+                <button class="btn btn-primary" id="start-camera">📹 Start Camera</button>
+                <button class="btn btn-warning" id="flashlight-btn">🔦 Flashlight Off</button>
+                <button class="btn btn-success" id="start-record" disabled>⏺️ Start Recording (10s)</button>
+                <button class="btn btn-danger" id="stop-record" disabled>⏹️ Stop Recording</button>
+                <button class="btn btn-primary" id="analyze" disabled>🔬 Analyze Blood Pressure</button>
+            </div>
+
+            <div class="message message-error" id="error-msg"></div>
+            <div class="message message-success" id="success-msg"></div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <h3>Processing...</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diary/History Page -->
+    <div class="page" id="diary-page">
+        <div class="page-content">
+            <div class="calendar-header">
+                <div class="calendar-nav">
+                    <button id="prev-month">‹</button>
+                    <div class="calendar-month" id="current-month">October 2025</div>
+                    <button id="next-month">›</button>
+                </div>
+                <div class="calendar-grid" id="calendar"></div>
+            </div>
+
+            <div id="measurements-list">
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <div>No measurements yet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Page -->
+    <div class="page" id="notifications-page">
+        <div class="page-content">
+            <div class="empty-state">
+                <div class="empty-icon">🔔</div>
+                <div>No notifications</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Learn Page -->
+    <div class="page" id="learn-page">
+        <div class="page-content">
+            <div class="learn-grid">
+                <div class="learn-card" onclick="showEducation('measurement')">
+                    <div class="learn-image">📏</div>
+                    <div class="learn-content">
+                        <div class="learn-title">Measurements guide</div>
+                        <button class="learn-btn">LEARN</button>
+                    </div>
+                </div>
+                <div class="learn-card" onclick="showEducation('hypertension')">
+                    <div class="learn-image">🩺</div>
+                    <div class="learn-content">
+                        <div class="learn-title">What is hypertension?</div>
+                        <button class="learn-btn">LEARN</button>
+                    </div>
+                </div>
+                <div class="learn-card" onclick="showEducation('consequences')">
+                    <div class="learn-image">❤️</div>
+                    <div class="learn-content">
+                        <div class="learn-title">Consequences of hypertension</div>
+                        <button class="learn-btn">LEARN</button>
+                    </div>
+                </div>
+                <div class="learn-card" onclick="showEducation('healthy')">
+                    <div class="learn-image">🥗</div>
+                    <div class="learn-content">
+                        <div class="learn-title">Healthy habits</div>
+                        <button class="learn-btn">LEARN</button>
+                    </div>
+                </div>
+                <div class="learn-card" onclick="showEducation('avoid')">
+                    <div class="learn-image">🚫</div>
+                    <div class="learn-content">
+                        <div class="learn-title">What to avoid?</div>
+                        <button class="learn-btn">LEARN</button>
+                    </div>
+                </div>
+                <div class="learn-card" onclick="showEducation('hrv')">
+                    <div class="learn-image">📈</div>
+                    <div class="learn-content">
+                        <div class="learn-title">What is HRV?</div>
+                        <button class="learn-btn">LEARN</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Education Modal -->
+    <div class="edu-modal" id="edu-modal">
+        <div class="edu-modal-content">
+            <div class="edu-modal-header">
+                <button class="edu-close" onclick="closeEducation()">×</button>
+                <h2 id="edu-title"></h2>
+            </div>
+            <div class="edu-modal-body" id="edu-content"></div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button class="nav-item active" data-page="home">
+            <div class="nav-icon">❤️</div>
+            <div class="nav-label">Home</div>
+        </button>
+        <button class="nav-item" data-page="scan">
+            <div class="nav-icon">📹</div>
+            <div class="nav-label">Scan</div>
+        </button>
+        <button class="nav-item" data-page="diary">
+            <div class="nav-icon">📊</div>
+            <div class="nav-label">Diary</div>
+        </button>
+        <button class="nav-item" data-page="notifications">
+            <div class="nav-icon">🔔</div>
+            <div class="nav-label">Alerts</div>
+        </button>
+        <button class="nav-item" data-page="learn">
+            <div class="nav-icon">📚</div>
+            <div class="nav-label">Learn</div>
+        </button>
+    </div>
+
+    <script>
+        // State
+        const state = {
+            stream: null,
+            mediaRecorder: null,
+            recordedChunks: [],
+            recording: false,
+            recordStartTime: 0,
+            timerInterval: null,
+            currentPage: 'home',
+            currentMonth: new Date(),
+            measurements: JSON.parse(localStorage.getItem('measurements') || '[]'),
+            flashlightOn: false
+        };
+
+        // DOM Elements
+        const pages = document.querySelectorAll('.page');
+        const navItems = document.querySelectorAll('.nav-item');
+        const video = document.getElementById('video');
+        const videoContainer = document.getElementById('video-container');
+        const startCameraBtn = document.getElementById('start-camera');
+        const startRecordBtn = document.getElementById('start-record');
+        const stopRecordBtn = document.getElementById('stop-record');
+        const analyzeBtn = document.getElementById('analyze');
+        const flashlightBtn = document.getElementById('flashlight-btn');
+        const timer = document.getElementById('timer');
+        const progress = document.getElementById('progress');
+        const loading = document.getElementById('loading');
+        const errorMsg = document.getElementById('error-msg');
+        const successMsg = document.getElementById('success-msg');
+        const ageInput = document.getElementById('age');
+        const heightInput = document.getElementById('height');
+        const weightInput = document.getElementById('weight');
+        const bmiInput = document.getElementById('bmi');
+
+        // Navigation
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const page = item.dataset.page;
+                switchPage(page);
+            });
+        });
+
+        document.getElementById('scan-now-btn').addEventListener('click', () => {
+            switchPage('scan');
+        });
+
+        function switchPage(pageName) {
+            pages.forEach(p => p.classList.remove('active'));
+            navItems.forEach(n => n.classList.remove('active'));
+
+            document.getElementById(`${pageName}-page`).classList.add('active');
+            document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
+            state.currentPage = pageName;
+
+            if (pageName === 'diary') {
+                renderCalendar();
+                renderMeasurements();
+            } else if (pageName === 'home') {
+                updateHomeMetrics();
+            }
+        }
+
+        // BMI Calculation
+        heightInput.addEventListener('input', calculateBMI);
+        weightInput.addEventListener('input', calculateBMI);
+
+        function calculateBMI() {
+            const height = parseFloat(heightInput.value) / 100;
+            const weight = parseFloat(weightInput.value);
+            if (height > 0 && weight > 0) {
+                bmiInput.value = (weight / (height * height)).toFixed(1);
+            }
+        }
+
+        // Flashlight Control
+        flashlightBtn.addEventListener('click', toggleFlashlight);
+
+        async function toggleFlashlight() {
+            try {
+                const action = state.flashlightOn ? 'off' : 'on';
+                
+                const response = await fetch('/flashlight', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: action })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    state.flashlightOn = !state.flashlightOn;
+                    updateFlashlightButton();
+                    showSuccess(result.message);
+                } else {
+                    showError('Flashlight control failed');
+                }
+            } catch (error) {
+                console.error('Flashlight error:', error);
+                showError('Flashlight not available on this device');
+            }
+        }
+
+        function updateFlashlightButton() {
+            flashlightBtn.innerHTML = state.flashlightOn ? '🔦 Flashlight On' : '🔦 Flashlight Off';
+            flashlightBtn.classList.toggle('on', state.flashlightOn);
+        }
+
+        // Camera Functions
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                state.stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' },
+                    audio: false
+                });
+                video.srcObject = state.stream;
+                videoContainer.classList.add('active');
+                startRecordBtn.disabled = false;
+                startCameraBtn.disabled = true;
+                showSuccess('Camera started! Position your fingertip over the lens.');
+            } catch (err) {
+                showError('Could not access camera. Please grant permissions.');
+            }
+        });
+
+        startRecordBtn.addEventListener('click', () => {
+            state.recordedChunks = [];
+            state.mediaRecorder = new MediaRecorder(state.stream);
+
+            state.mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) state.recordedChunks.push(e.data);
+            };
+
+            state.mediaRecorder.onstop = () => {
+                state.recording = false;
+                startRecordBtn.disabled = false;
+                stopRecordBtn.disabled = true;
+                analyzeBtn.disabled = false;
+                timer.style.display = 'none';
+                clearInterval(state.timerInterval);
+                showSuccess('10-second recording complete! Click Analyze.');
+            };
+
+            state.mediaRecorder.start();
+            state.recording = true;
+            startRecordBtn.disabled = true;
+            stopRecordBtn.disabled = false;
+            timer.style.display = 'block';
+            state.recordStartTime = Date.now();
+
+            state.timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - state.recordStartTime) / 1000);
+                timer.textContent = `Recording: ${elapsed}s`;
+                progress.style.width = `${Math.min((elapsed / 10) * 100, 100)}%`;
+
+                if (elapsed >= 10) {
+                    stopRecordBtn.click();
+                }
+            }, 100);
+        });
+
+        stopRecordBtn.addEventListener('click', () => {
+            if (state.mediaRecorder && state.recording) {
+                state.mediaRecorder.stop();
+            }
+        });
+
+        // Analyze
+        analyzeBtn.addEventListener('click', async () => {
+            if (!ageInput.value || !heightInput.value || !weightInput.value) {
+                showError('Please fill in all information fields.');
+                return;
+            }
+
+            if (state.recordedChunks.length === 0) {
+                showError('Please record a video first.');
+                return;
+            }
+
+            loading.style.display = 'block';
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            const blob = new Blob(state.recordedChunks, { type: 'video/webm' });
+            const formData = new FormData();
+            formData.append('video', blob, 'recording.webm');
+            formData.append('age', ageInput.value);
+            formData.append('height', heightInput.value);
+            formData.append('weight', weightInput.value);
+            formData.append('bmi', bmiInput.value);
+
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    const measurement = {
+                        timestamp: new Date().toISOString(),
+                        sbp: result.sbp,
+                        dbp: result.dbp,
+                        pulse: result.pulse,
+                        hrv: result.hrv,
+                        stress: result.stress.stress_level,
+                        signal_quality: result.signal_quality,
+                        category: result.category,
+                        description: result.description
+                    };
+
+                    state.measurements.unshift(measurement);
+                    localStorage.setItem('measurements', JSON.stringify(state.measurements));
+
+                    loading.style.display = 'none';
+                    
+                    // Show comprehensive results
+                    showSuccess(`
+                        BP: ${result.sbp}/${result.dbp} mmHg - ${result.category}
+                        Pulse: ${result.pulse} BPM | HRV: ${result.hrv} ms
+                        Stress: ${result.stress.stress_level}/10
+                        Signal Quality: ${result.signal_quality.quality_score}%
+                    `);
+                    
+                    // Update home metrics immediately
+                    updateHomeMetrics();
+                    
+                    // Switch to diary to show result
+                    setTimeout(() => switchPage('diary'), 2000);
+
+                } else {
+                    throw new Error(result.error);
+                }
+
+            } catch (err) {
+                loading.style.display = 'none';
+                showError('Processing failed. Please try again.');
+                console.error('Analysis error:', err);
+            }
+        });
+
+        function classifyBP(sbp, dbp) {
+            if (sbp < 120 && dbp < 80) return 'Normal';
+            if (sbp < 130 && dbp < 80) return 'Elevated';
+            if (sbp < 140 || dbp < 90) return 'Stage 1 Hypertension';
+            if (sbp < 180 || dbp < 120) return 'Stage 2 Hypertension';
+            return 'Hypertensive Crisis';
+        }
+
+        // Messages
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+            successMsg.style.display = 'none';
+            setTimeout(() => errorMsg.style.display = 'none', 5000);
+        }
+
+        function showSuccess(msg) {
+            successMsg.textContent = msg;
+            successMsg.style.display = 'block';
+            errorMsg.style.display = 'none';
+            setTimeout(() => successMsg.style.display = 'none', 5000);
+        }
+
+        // Calendar
+        function renderCalendar() {
+            const calendar = document.getElementById('calendar');
+            const year = state.currentMonth.getFullYear();
+            const month = state.currentMonth.getMonth();
+            
+            document.getElementById('current-month').textContent = 
+                new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            let html = '';
+            ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(day => {
+                html += `<div class="calendar-day-name">${day}</div>`;
+            });
+
+            const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
+            
+            for (let i = 0; i < adjustedFirstDay; i++) {
+                html += `<div class="calendar-day other-month"></div>`;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dateStr = date.toISOString().split('T')[0];
+                const hasData = state.measurements.some(m => m.timestamp.startsWith(dateStr));
+                const isToday = new Date().toDateString() === date.toDateString();
+                
+                html += `<div class="calendar-day ${hasData ? 'has-data' : ''} ${isToday ? 'selected' : ''}">${day}</div>`;
+            }
+
+            calendar.innerHTML = html;
+        }
+
+        document.getElementById('prev-month').addEventListener('click', () => {
+            state.currentMonth.setMonth(state.currentMonth.getMonth() - 1);
+            renderCalendar();
+        });
+
+        document.getElementById('next-month').addEventListener('click', () => {
+            state.currentMonth.setMonth(state.currentMonth.getMonth() + 1);
+            renderCalendar();
+        });
+
+        // Render Measurements
+        function renderMeasurements() {
+            const list = document.getElementById('measurements-list');
+            
+            if (state.measurements.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <div>No measurements yet</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const today = state.measurements.filter(m => {
+                const mDate = new Date(m.timestamp).toDateString();
+                return mDate === new Date().toDateString();
+            });
+
+            if (today.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <div>No measurements for today</div>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = today.map(m => {
+                const time = new Date(m.timestamp).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                return `
+                    <div class="measurement-detail">
+                        <div class="detail-header">
+                            <strong>BLOOD PRESSURE READING</strong>
+                            <span class="detail-time">${new Date(m.timestamp).toLocaleDateString()} ${time}</span>
+                        </div>
+                        <div class="bp-readings">
+                            <div class="reading-card">
+                                <div class="reading-icon">💓</div>
+                                <div class="reading-label">Systolic BP</div>
+                                <div class="reading-value">${m.sbp}</div>
+                                <div class="reading-unit">mmHg</div>
+                                <div class="metric-status">${m.category}</div>
+                            </div>
+                            <div class="reading-card">
+                                <div class="reading-icon">💓</div>
+                                <div class="reading-label">Diastolic BP</div>
+                                <div class="reading-value">${m.dbp}</div>
+                                <div class="reading-unit">mmHg</div>
+                                <div class="metric-status">${m.description}</div>
+                            </div>
+                        </div>
+                        <div class="vitals-grid">
+                            <div class="vital-item">
+                                <div class="vital-icon">📈</div>
+                                <div class="vital-info">
+                                    <div class="vital-label">Pulse</div>
+                                    <div class="vital-value">${m.pulse} <span style="font-size: 0.8rem; font-weight: normal;">bpm</span></div>
+                                </div>
+                            </div>
+                            <div class="vital-item">
+                                <div class="vital-icon">🔄</div>
+                                <div class="vital-info">
+                                    <div class="vital-label">HRV</div>
+                                    <div class="vital-value">${m.hrv} <span style="font-size: 0.8rem; font-weight: normal;">ms</span></div>
+                                </div>
+                            </div>
+                            <div class="vital-item">
+                                <div class="vital-icon">😰</div>
+                                <div class="vital-info">
+                                    <div class="vital-label">Stress</div>
+                                    <div class="vital-value">${m.stress} <span style="font-size: 0.8rem; font-weight: normal;">/10</span></div>
+                                </div>
+                            </div>
+                            <div class="vital-item">
+                                <div class="vital-icon">📊</div>
+                                <div class="vital-info">
+                                    <div class="vital-label">Signal Quality</div>
+                                    <div class="vital-value">${m.signal_quality ? m.signal_quality.quality_score : '--'} <span style="font-size: 0.8rem; font-weight: normal;">%</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update Home Metrics
+        function updateHomeMetrics() {
+            if (state.measurements.length > 0) {
+                const latest = state.measurements[0];
+                document.getElementById('home-pulse').textContent = latest.pulse || '--';
+                document.getElementById('home-hrv').textContent = latest.hrv || '--';
+                document.getElementById('home-stress').textContent = latest.stress || '--';
+            }
+        }
+
+        // Education Content
+        const educationContent = {
+            measurement: {
+                title: 'Measurements Guide',
+                content: `
+                    <h3>📏 How to Take Accurate Measurements</h3>
+                    <p><strong>Preparation:</strong> Sit and rest for at least 5 minutes to stabilize your heart rate and blood pressure before taking measurements.</p>
+                    
+                    <h3>🎯 Proper Technique</h3>
+                    <p>1. Find a quiet, well-lit area</p>
+                    <p>2. Sit comfortably with your back supported</p>
+                    <p>3. Place your fingertip gently over the camera lens</p>
+                    <p>4. Keep your finger still during the 10-second recording</p>
+                    <p>5. Breathe normally and stay relaxed</p>
+
+                    <h3>⏰ Best Times to Measure</h3>
+                    <p>• In the morning before breakfast</p>
+                    <p>• In the evening before dinner</p>
+                    <p>• Avoid measurements after exercise, caffeine, or stress</p>
+                `
+            },
+            hypertension: {
+                title: 'What is Hypertension?',
+                content: `
+                    <h3>🩺 Understanding High Blood Pressure</h3>
+                    <p>Hypertension, or high blood pressure, occurs when the force of blood against artery walls is consistently too high. This can damage blood vessels and organs over time.</p>
+
+                    <h3>📊 Blood Pressure Categories</h3>
+                    <p><strong>Normal:</strong> Less than 120/80 mmHg</p>
+                    <p><strong>Elevated:</strong> 120-129 systolic and less than 80 diastolic</p>
+                    <p><strong>Stage 1:</strong> 130-139 systolic or 80-89 diastolic</p>
+                    <p><strong>Stage 2:</strong> 140+ systolic or 90+ diastolic</p>
+
+                    <h3>⚠️ Risk Factors</h3>
+                    <p>• Age (risk increases with age)</p>
+                    <p>• Family history</p>
+                    <p>• Obesity</p>
+                    <p>• Lack of physical activity</p>
+                    <p>• High salt intake</p>
+                    <p>• Excessive alcohol consumption</p>
+                    <p>• Stress</p>
+                `
+            },
+            consequences: {
+                title: 'Consequences of Hypertension',
+                content: `
+                    <h3>❤️ Health Impact</h3>
+                    <p>Uncontrolled hypertension can lead to serious health complications affecting multiple organ systems.</p>
+
+                    <h3>🫀 Heart and Blood Vessels</h3>
+                    <p>• Heart attack and heart failure</p>
+                    <p>• Stroke</p>
+                    <p>• Aneurysm</p>
+                    <p>• Coronary artery disease</p>
+
+                    <h3>🧠 Brain</h3>
+                    <p>• Memory problems</p>
+                    <p>• Dementia</p>
+                    <p>• Transient ischemic attack (TIA)</p>
+
+                    <h3>👁️ Eyes</h3>
+                    <p>• Damage to blood vessels in eyes</p>
+                    <p>• Vision loss</p>
+
+                    <h3>🩺 Kidneys</h3>
+                    <p>• Kidney disease</p>
+                    <p>• Kidney failure</p>
+
+                    <p><strong>Important:</strong> Regular monitoring and early intervention can prevent these complications.</p>
+                `
+            },
+            healthy: {
+                title: 'Healthy Habits',
+                content: `
+                    <h3>🥗 Dietary Changes</h3>
+                    <p><strong>DASH Diet:</strong> Dietary Approaches to Stop Hypertension</p>
+                    <p>• Eat plenty of fruits and vegetables</p>
+                    <p>• Choose whole grains</p>
+                    <p>• Include lean proteins (fish, poultry, beans)</p>
+                    <p>• Limit saturated fats and cholesterol</p>
+                    <p>• Reduce sodium intake (less than 2,300mg per day)</p>
+
+                    <h3>🏃 Physical Activity</h3>
+                    <p>• At least 150 minutes of moderate exercise weekly</p>
+                    <p>• Walking, swimming, cycling</p>
+                    <p>• Strength training 2 days per week</p>
+
+                    <h3>⚖️ Weight Management</h3>
+                    <p>• Maintain a healthy BMI (18.5-24.9)</p>
+                    <p>• Even 5-10 pounds of weight loss can help</p>
+
+                    <h3>😌 Stress Management</h3>
+                    <p>• Practice meditation or deep breathing</p>
+                    <p>• Get adequate sleep (7-9 hours)</p>
+                    <p>• Engage in hobbies and relaxation</p>
+                `
+            },
+            avoid: {
+                title: 'What to Avoid',
+                content: `
+                    <h3>🚫 Harmful Habits</h3>
+                    
+                    <h3>🚬 Smoking</h3>
+                    <p>Smoking raises blood pressure and damages blood vessel walls. Each cigarette causes an immediate temporary increase in blood pressure.</p>
+
+                    <h3>🍺 Excessive Alcohol</h3>
+                    <p>• Limit to 1 drink per day for women</p>
+                    <p>• Limit to 2 drinks per day for men</p>
+                    <p>• Heavy drinking can lead to resistant hypertension</p>
+
+                    <h3>🧂 High Sodium Foods</h3>
+                    <p>• Processed and packaged foods</p>
+                    <p>• Fast food</p>
+                    <p>• Canned soups and vegetables</p>
+                    <p>• Deli meats</p>
+                    <p>• Salty snacks</p>
+
+                    <h3>☕ Caffeine</h3>
+                    <p>• Can cause short-term spikes in blood pressure</p>
+                    <p>• Limit coffee to 2-3 cups daily</p>
+
+                    <h3>😰 Chronic Stress</h3>
+                    <p>• Prolonged stress elevates cortisol and blood pressure</p>
+                    <p>• Practice stress-reduction techniques</p>
+                `
+            },
+            hrv: {
+                title: 'What is HRV?',
+                content: `
+                    <h3>📈 Heart Rate Variability</h3>
+                    <p>HRV measures the variation in time between consecutive heartbeats. It's an important indicator of cardiovascular health and stress levels.</p>
+
+                    <h3>💡 Why It Matters</h3>
+                    <p><strong>Higher HRV:</strong> Indicates better cardiovascular fitness and stress resilience</p>
+                    <p><strong>Lower HRV:</strong> May indicate stress, fatigue, or health issues</p>
+
+                    <h3>📊 Normal Ranges</h3>
+                    <p>• Young adults: 55-105 ms</p>
+                    <p>• Middle-aged: 25-45 ms</p>
+                    <p>• Elderly: 15-25 ms</p>
+                    <p>Note: Values vary by age, fitness level, and measurement method</p>
+
+                    <h3>✅ Improving HRV</h3>
+                    <p>• Regular exercise</p>
+                    <p>• Adequate sleep</p>
+                    <p>• Stress management</p>
+                    <p>• Healthy diet</p>
+                    <p>• Meditation and breathing exercises</p>
+                `
+            }
+        };
+
+        function showEducation(topic) {
+            const modal = document.getElementById('edu-modal');
+            const content = educationContent[topic];
+            
+            document.getElementById('edu-title').textContent = content.title;
+            document.getElementById('edu-content').innerHTML = content.content;
+            modal.classList.add('active');
+        }
+
+        function closeEducation() {
+            document.getElementById('edu-modal').classList.remove('active');
+        }
+
+        // Close modal on outside click
+        document.getElementById('edu-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'edu-modal') {
+                closeEducation();
+            }
+        });
+
+        // Initialize
+        updateHomeMetrics();
+    </script>
+</body>
+</html>
