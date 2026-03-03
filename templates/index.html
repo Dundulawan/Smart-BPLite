@@ -1,1624 +1,1877 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heart Monitor - BP Analysis</title>
-    <style>
-        :root {
-            --primary: #4DB6AC;
-            --primary-dark: #26A69A;
-            --accent: #5C6BC0;
-            --success: #66BB6A;
-            --danger: #EF5350;
-            --warning: #FFA726;
-            --bg-primary: #E8F5F0;
-            --bg-secondary: #FFFFFF;
-            --text-primary: #2C3E50;
-            --text-secondary: #7F8C8D;
-            --border: #E0E6ED;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            padding-bottom: 80px;
-            overflow-x: hidden;
-        }
-
-        /* Header */
-        .app-header {
-            background: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .menu-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-primary);
-        }
-
-        .greeting {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .user-avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #E91E63, #9C27B0);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 1.2rem;
-        }
-
-        /* Pages Container */
-        .page {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .page-content {
-            padding: 20px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* Home Page - Scan Button */
-        .scan-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-
-        .scan-button {
-            width: 280px;
-            height: 280px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4DB6AC, #26A69A);
-            border: none;
-            box-shadow: 0 15px 40px rgba(77, 182, 172, 0.4);
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            position: relative;
-            animation: pulse 2s infinite;
-        }
-
-        .scan-button::before {
-            content: '';
-            position: absolute;
-            width: 320px;
-            height: 320px;
-            border-radius: 50%;
-            background: rgba(77, 182, 172, 0.2);
-            z-index: -1;
-        }
-
-        .scan-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 20px 50px rgba(77, 182, 172, 0.5);
-        }
-
-        .scan-icon {
-            font-size: 4rem;
-            margin-bottom: 15px;
-        }
-
-        .scan-text {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        /* Metrics Cards */
-        .metrics-section {
-            background: white;
-            border-radius: 20px;
-            padding: 20px;
-            margin: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-
-        .metrics-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-        }
-
-        .metric-card {
-            background: var(--bg-primary);
-            border-radius: 15px;
-            padding: 20px 10px;
-            text-align: center;
-            transition: transform 0.2s;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-3px);
-        }
-
-        .metric-icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-
-        .metric-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin: 8px 0;
-        }
-
-        .metric-label {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            font-weight: 600;
-        }
-
-        .metric-status {
-            font-size: 0.85rem;
-            color: var(--success);
-            margin-top: 5px;
-        }
-
-        /* Diary/History Page */
-        .calendar-header {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .calendar-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .calendar-nav button {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--primary);
-            cursor: pointer;
-        }
-
-        .calendar-month {
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
-            text-align: center;
-        }
-
-        .calendar-day-name {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            padding: 8px 0;
-            font-weight: 600;
-        }
-
-        .calendar-day {
-            padding: 12px 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .calendar-day:hover {
-            background: var(--bg-primary);
-        }
-
-        .calendar-day.has-data::after {
-            content: '';
-            position: absolute;
-            bottom: 4px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--primary);
-        }
-
-        .calendar-day.selected {
-            background: var(--primary);
-            color: white;
-        }
-
-        .calendar-day.other-month {
-            color: #ccc;
-        }
-
-        /* Measurement Detail */
-        .measurement-detail {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .detail-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .detail-time {
-            color: var(--text-secondary);
-        }
-
-        .bp-readings {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .reading-card {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .reading-icon {
-            font-size: 1.5rem;
-            margin-bottom: 8px;
-        }
-
-        .reading-label {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-
-        .reading-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .reading-unit {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        .vitals-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .vital-item {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .vital-icon {
-            font-size: 1.8rem;
-        }
-
-        .vital-info {
-            flex: 1;
-        }
-
-        .vital-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .vital-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        /* Learn Page */
-        .learn-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .learn-card {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .learn-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .learn-image {
-            width: 100%;
-            height: 150px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-        }
-
-        .learn-card:nth-child(2) .learn-image {
-            background: linear-gradient(135deg, #4DB6AC 0%, #26A69A 100%);
-        }
-
-        .learn-card:nth-child(3) .learn-image {
-            background: linear-gradient(135deg, #5C6BC0 0%, #3F51B5 100%);
-        }
-
-        .learn-card:nth-child(4) .learn-image {
-            background: linear-gradient(135deg, #FF7043 0%, #F4511E 100%);
-        }
-
-        .learn-card:nth-child(5) .learn-image {
-            background: linear-gradient(135deg, #4DB6AC 0%, #00897B 100%);
-        }
-
-        .learn-card:nth-child(6) .learn-image {
-            background: linear-gradient(135deg, #5C6BC0 0%, #3949AB 100%);
-        }
-
-        .learn-content {
-            padding: 15px;
-        }
-
-        .learn-title {
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .learn-btn {
-            background: var(--bg-primary);
-            border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
-            color: var(--primary);
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        /* Education Detail Modal */
-        .edu-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .edu-modal.active {
-            display: block;
-        }
-
-        .edu-modal-content {
-            background: white;
-            max-width: 600px;
-            margin: 20px auto;
-            border-radius: 20px;
-            overflow: hidden;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(50px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .edu-modal-header {
-            background: linear-gradient(135deg, #4DB6AC, #26A69A);
-            color: white;
-            padding: 30px 20px;
-            position: relative;
-        }
-
-        .edu-close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .edu-modal-body {
-            padding: 30px 20px;
-            line-height: 1.8;
-        }
-
-        .edu-modal-body h3 {
-            margin: 25px 0 15px;
-            color: var(--primary);
-        }
-
-        .edu-modal-body p {
-            margin-bottom: 15px;
-            color: var(--text-primary);
-        }
-
-        /* Scan/Recording Page */
-        .recording-page {
-            padding: 20px;
-        }
-
-        .recording-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .recording-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .recording-subtitle {
-            color: var(--text-secondary);
-        }
-
-        .form-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .video-container {
-            background: #000;
-            border-radius: 15px;
-            overflow: hidden;
-            position: relative;
-            aspect-ratio: 4/3;
-            margin: 20px 0;
-        }
-
-        #video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .video-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            transition: opacity 0.3s;
-        }
-
-        .video-container.active .video-overlay {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .finger-guide {
-            width: 120px;
-            height: 120px;
-            border: 4px dashed rgba(77, 182, 172, 0.6);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            margin-bottom: 15px;
-            animation: pulse 2s infinite;
-        }
-
-        .timer {
-            text-align: center;
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--danger);
-            margin: 15px 0;
-            display: none;
-        }
-
-        .progress-bar {
-            height: 8px;
-            background: var(--border);
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 20px 0;
-        }
-
-        .progress {
-            height: 100%;
-            background: var(--primary);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin: 8px 0;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #66BB6A, #43A047);
-            color: white;
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #EF5350, #E53935);
-            color: white;
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #78909C, #546E7A);
-            color: white;
-        }
-
-        .btn-warning.on {
-            background: linear-gradient(135deg, #FFA726, #FB8C00);
-        }
-
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .message {
-            padding: 15px;
-            border-radius: 12px;
-            margin: 15px 0;
-            display: none;
-        }
-
-        .message-error {
-            background: #FFEBEE;
-            color: #C62828;
-        }
-
-        .message-success {
-            background: #E8F5E9;
-            color: #2E7D32;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 40px;
-        }
-
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid var(--border);
-            border-top: 6px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Bottom Navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: white;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            z-index: 100;
-        }
-
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            padding: 8px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: all 0.3s;
-            border: none;
-            background: none;
-        }
-
-        .nav-item.active {
-            color: var(--primary);
-        }
-
-        .nav-item.active .nav-icon {
-            background: var(--primary);
-            color: white;
-        }
-
-        .nav-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            background: var(--bg-primary);
-            transition: all 0.3s;
-        }
-
-        .nav-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-secondary);
-        }
-
-        .empty-icon {
-            font-size: 4rem;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-
-        @media (max-width: 768px) {
-            .metrics-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
-            }
-
-            .metric-card {
-                padding: 15px 8px;
-            }
-
-            .scan-button {
-                width: 240px;
-                height: 240px;
-            }
-
-            .scan-button::before {
-                width: 280px;
-                height: 280px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PulseIQ — Heart Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,300&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════
+   THEME SYSTEM
+══════════════════════════════════════════ */
+:root {
+  --h: 172;
+  --brand:       hsl(var(--h), 58%, 42%);
+  --brand-l:     hsl(var(--h), 55%, 54%);
+  --brand-d:     hsl(var(--h), 65%, 30%);
+  --brand-glow:  hsla(var(--h), 58%, 42%, 0.18);
+  --brand-glow2: hsla(var(--h), 58%, 42%, 0.08);
+
+  --bg:     hsl(var(--h), 18%, 96%);
+  --bg2:    #ffffff;
+  --bg3:    hsl(var(--h), 16%, 92%);
+  --bg4:    hsl(var(--h), 14%, 88%);
+  --text:   #18252e;
+  --text2:  #64788a;
+  --text3:  #9baab8;
+  --border: hsl(var(--h), 18%, 87%);
+  --shadow: 0 4px 28px hsla(var(--h),30%,15%,0.08);
+  --shadow2:0 2px 10px hsla(var(--h),30%,15%,0.05);
+
+  --danger:  #e04040;
+  --success: #22c55e;
+  --warn:    #f59e0b;
+
+  --r:  18px;
+  --r2: 12px;
+  --r3: 8px;
+}
+
+/* THEME VARIANTS */
+[data-theme="ocean"]  { --h: 208; }
+[data-theme="violet"] { --h: 258; }
+[data-theme="rose"]   { --h: 340; }
+[data-theme="amber"]  {
+  --h: 36;
+  --brand: hsl(36,90%,42%);
+  --brand-l: hsl(36,85%,55%);
+  --brand-d: hsl(36,90%,28%);
+}
+[data-theme="slate"]  { --h: 215; }
+[data-theme="dark"] {
+  --h: 210;
+  --bg:   hsl(215, 28%, 9%);
+  --bg2:  hsl(215, 24%, 13%);
+  --bg3:  hsl(215, 22%, 17%);
+  --bg4:  hsl(215, 20%, 22%);
+  --text: #dde8f2;
+  --text2:#7a96b0;
+  --text3:#4a6277;
+  --border:hsl(215,22%,22%);
+  --shadow:0 4px 28px hsla(215,60%,5%,0.5);
+  --shadow2:0 2px 10px hsla(215,60%,5%,0.3);
+}
+[data-theme="amoled"] {
+  --h: 172;
+  --bg:   #000000;
+  --bg2:  #0a0a0a;
+  --bg3:  #111111;
+  --bg4:  #1a1a1a;
+  --text: #e8f5f0;
+  --text2:#4DB6AC;
+  --text3:#2a5a55;
+  --border:#1e2e2c;
+  --shadow:0 4px 28px rgba(0,0,0,0.8);
+}
+
+/* ══════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100dvh;
+  padding-bottom:86px;
+  overflow-x:hidden;
+  transition:background .35s,color .35s;
+  -webkit-tap-highlight-color:transparent;
+}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;border:none;background:none;}
+input,select{font-family:'DM Sans',sans-serif;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--brand);border-radius:3px;}
+
+/* ══════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════ */
+.hdr{
+  position:sticky;top:0;z-index:300;
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  padding:13px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  transition:background .35s,border-color .35s;
+}
+.hdr-logo{display:flex;align-items:center;gap:10px;}
+.logo-mark{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(145deg,var(--brand-l),var(--brand-d));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.15rem;
+  box-shadow:0 3px 12px var(--brand-glow);
+}
+.logo-name{
+  font-family:'Fraunces',serif;
+  font-weight:900;font-size:1.25rem;letter-spacing:-.02em;
+  background:linear-gradient(135deg,var(--brand),var(--brand-d));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.hdr-btn{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--bg3);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;color:var(--text);
+  transition:all .2s;
+}
+.hdr-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand);transform:scale(1.06);}
+.avatar{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,var(--brand),var(--brand-d));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:.9rem;
+  box-shadow:0 3px 10px var(--brand-glow);
+}
+
+/* ══════════════════════════════════════════
+   PAGE SYSTEM
+══════════════════════════════════════════ */
+.page{display:none;animation:pgIn .28s cubic-bezier(.4,0,.2,1);}
+.page.active{display:block;}
+@keyframes pgIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.wrap{max-width:600px;margin:0 auto;padding:18px;}
+
+/* ══════════════════════════════════════════
+   HOME PAGE
+══════════════════════════════════════════ */
+.home-hero{
+  padding:28px 18px 0;
+  max-width:600px;margin:0 auto;
+  display:flex;flex-direction:column;align-items:center;
+}
+.hero-sub{font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:6px;}
+.hero-title{
+  font-family:'Fraunces',serif;
+  font-size:1.9rem;font-weight:700;line-height:1.15;text-align:center;margin-bottom:22px;
+}
+.hero-title em{font-style:italic;color:var(--brand);}
+
+/* Orbital scan button */
+.orbit-stage{
+  position:relative;width:250px;height:250px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:24px;
+}
+.ring{
+  position:absolute;border-radius:50%;
+  border:1.5px solid var(--brand-glow);
+}
+.ring-1{width:100%;height:100%;animation:rspin 10s linear infinite;}
+.ring-2{width:80%;height:80%;animation:rspin 7s linear infinite reverse;}
+.ring-1::after,.ring-2::after{
+  content:'';position:absolute;width:7px;height:7px;
+  background:var(--brand);border-radius:50%;
+  top:-3.5px;left:50%;transform:translateX(-50%);
+  box-shadow:0 0 8px 2px var(--brand-glow);
+}
+.ring-2::after{background:var(--brand-l);}
+@keyframes rspin{to{transform:rotate(360deg);}}
+
+.scan-core{
+  width:165px;height:165px;border-radius:50%;
+  background:linear-gradient(150deg,var(--brand-l),var(--brand-d));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#fff;z-index:1;
+  box-shadow:0 8px 32px var(--brand-glow),0 0 0 0 var(--brand-glow);
+  transition:all .25s;
+  animation:corePulse 2.8s ease-in-out infinite;
+}
+.scan-core:hover{transform:scale(1.07);box-shadow:0 14px 40px var(--brand-glow);}
+.scan-core .ci{font-size:2.6rem;line-height:1;margin-bottom:6px;}
+.scan-core .cl{font-size:.82rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+@keyframes corePulse{
+  0%,100%{box-shadow:0 8px 32px var(--brand-glow),0 0 0 0 hsla(var(--h),58%,42%,0);}
+  50%{box-shadow:0 8px 32px var(--brand-glow),0 0 0 22px hsla(var(--h),58%,42%,0);}
+}
+
+/* Metric tiles */
+.sec-lbl{
+  font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);
+  margin-bottom:12px;padding:0 18px;max-width:600px;margin-left:auto;margin-right:auto;
+  display:flex;align-items:center;gap:8px;
+}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
+.metrics-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 18px;margin-bottom:16px;max-width:600px;margin-left:auto;margin-right:auto;}
+.mtile{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 10px;text-align:center;transition:all .25s;
+  position:relative;overflow:hidden;
+}
+.mtile::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--brand-glow2),transparent);
+  opacity:0;transition:opacity .25s;
+}
+.mtile:hover::before{opacity:1;}
+.mtile:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
+.mico{font-size:1.6rem;margin-bottom:8px;}
+.mval{
+  font-family:'DM Mono',monospace;
+  font-size:1.75rem;font-weight:500;
+  color:var(--brand);line-height:1;margin-bottom:4px;
+}
+.mlbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);}
+.munit{font-size:.65rem;color:var(--text3);margin-top:2px;}
+
+/* BP strip + sparkline */
+.bp-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;margin:0 18px 16px;max-width:564px;
+  margin-left:auto;margin-right:auto;
+}
+.bp-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.bp-card-title{font-weight:600;font-size:.9rem;}
+.bp-badge{
+  font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:20px;
+  background:var(--brand-glow);color:var(--brand);
+}
+.spark-wrap{position:relative;height:56px;}
+canvas.spark{display:block;width:100%;height:56px;}
+.spark-legend{display:flex;gap:16px;margin-top:8px;}
+.sl{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text2);}
+.sl-dot{width:7px;height:7px;border-radius:50%;}
+
+/* Tip card */
+.tip-card{
+  background:linear-gradient(135deg,var(--brand),var(--brand-d));
+  border-radius:var(--r);padding:18px 20px;
+  margin:0 18px 18px;max-width:564px;
+  margin-left:auto;margin-right:auto;
+  color:#fff;position:relative;overflow:hidden;
+}
+.tip-card::after{
+  content:'💡';position:absolute;right:14px;bottom:-4px;
+  font-size:3.2rem;opacity:.2;
+}
+.tip-tag{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:6px;}
+.tip-txt{font-size:.9rem;line-height:1.55;padding-right:40px;}
+
+/* ══════════════════════════════════════════
+   SCAN PAGE
+══════════════════════════════════════════ */
+.page-head{display:flex;align-items:center;gap:12px;margin-bottom:4px;}
+.page-ico{
+  width:42px;height:42px;border-radius:12px;
+  background:var(--brand-glow);border:1px solid var(--brand);
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;
+}
+.page-title{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;}
+.page-sub{font-size:.82rem;color:var(--text2);margin-bottom:16px;padding-left:54px;}
+
+.card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px;margin-bottom:12px;
+  box-shadow:var(--shadow2);
+  transition:background .35s,border-color .35s;
+}
+.card-hd{
+  font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--text2);margin-bottom:14px;
+  display:flex;align-items:center;gap:7px;
+}
+.card-hd::before{content:'';width:3px;height:13px;background:var(--brand);border-radius:2px;}
+
+/* Form */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fg{margin-bottom:12px;}
+.fg:last-child{margin-bottom:0;}
+.flbl{display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:5px;}
+.finput{
+  width:100%;padding:12px 14px;
+  border:1.5px solid var(--border);border-radius:var(--r2);
+  background:var(--bg3);color:var(--text);
+  font-size:.95rem;font-family:'DM Sans',sans-serif;
+  transition:all .22s;
+}
+.finput:focus{outline:none;border-color:var(--brand);background:var(--bg2);box-shadow:0 0 0 3px var(--brand-glow);}
+.bmi-pill{
+  padding:12px 14px;border-radius:var(--r2);
+  background:var(--brand-glow);border:1.5px solid var(--brand);
+  color:var(--brand);font-family:'DM Mono',monospace;
+  font-size:1rem;font-weight:500;text-align:center;
+}
+
+/* Video */
+.vid-shell{
+  border-radius:var(--r);overflow:hidden;
+  aspect-ratio:4/3;background:#060b10;
+  border:1px solid var(--border);position:relative;
+}
+video{width:100%;height:100%;object-fit:cover;display:block;}
+.vid-ov{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(6,11,16,.88),rgba(6,11,16,.72));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#fff;transition:opacity .4s;
+}
+.vid-shell.cam-on .vid-ov{opacity:0;pointer-events:none;}
+.fring{
+  width:100px;height:100px;border-radius:50%;
+  border:2.5px dashed rgba(255,255,255,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:2.6rem;margin-bottom:12px;
+  animation:fringanim 2.5s ease-in-out infinite;
+}
+@keyframes fringanim{
+  0%,100%{border-color:rgba(255,255,255,.3);transform:scale(1);}
+  50%{border-color:var(--brand-l);transform:scale(1.06);}
+}
+.vid-ov-txt{font-size:1rem;font-weight:500;opacity:.85;}
+
+/* Waveform strip */
+.wave-strip{
+  height:54px;background:#040912;
+  border-top:1px solid rgba(255,255,255,.04);
+  position:relative;
+}
+canvas.wv{display:block;width:100%;height:54px;}
+.wv-lbl{position:absolute;top:5px;left:9px;font-size:.62rem;color:rgba(255,255,255,.3);font-family:'DM Mono',monospace;letter-spacing:.04em;}
+
+/* Timer row */
+.timer-row{display:none;align-items:center;gap:10px;margin:12px 0;}
+.timer-badge{
+  display:flex;align-items:center;gap:7px;
+  background:var(--danger);color:#fff;
+  border-radius:20px;padding:5px 14px;
+  font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;
+  white-space:nowrap;
+}
+.rec-dot{width:7px;height:7px;background:#fff;border-radius:50%;animation:blink 1s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.prog-track{flex:1;height:5px;background:var(--border);border-radius:5px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--brand-l),var(--brand-d));width:0%;transition:width .1s;border-radius:5px;}
+
+/* Buttons */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  width:100%;padding:14px 18px;border:none;border-radius:var(--r2);
+  font-size:.9rem;font-weight:600;letter-spacing:.02em;
+  transition:all .22s;margin-bottom:8px;font-family:'DM Sans',sans-serif;
+}
+.btn:last-child{margin-bottom:0;}
+.btn:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08);}
+.btn:active:not(:disabled){transform:translateY(0);}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;filter:none!important;}
+.btn-primary{background:linear-gradient(135deg,var(--brand-l),var(--brand-d));color:#fff;}
+.btn-ok{background:linear-gradient(135deg,#34d399,#059669);color:#fff;}
+.btn-stop{background:linear-gradient(135deg,#f87171,#dc2626);color:#fff;}
+.btn-ghost{background:var(--bg3);color:var(--text);border:1.5px solid var(--border);}
+.btn-ghost.flash-on{background:var(--warn);color:#fff;border-color:var(--warn);}
+.btn-outline{background:transparent;border:1.5px solid var(--brand);color:var(--brand);}
+
+/* Messages */
+.msg{
+  display:none;padding:12px 16px;border-radius:var(--r2);
+  font-size:.85rem;font-weight:500;margin-bottom:10px;
+  animation:pgIn .25s ease;
+}
+.msg-e{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;}
+.msg-s{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+[data-theme="dark"] .msg-e,[data-theme="amoled"] .msg-e{background:#2a1010;color:#fca5a5;border-color:#3f1515;}
+[data-theme="dark"] .msg-s,[data-theme="amoled"] .msg-s{background:#0a1f12;color:#86efac;border-color:#14422a;}
+
+/* Loading */
+.ld{display:none;text-align:center;padding:36px;}
+.spinner{
+  width:46px;height:46px;
+  border:4px solid var(--border);border-top:4px solid var(--brand);
+  border-radius:50%;margin:0 auto 14px;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ld-txt{color:var(--text2);font-size:.85rem;font-weight:500;}
+
+/* Result panel */
+.result-panel{
+  display:none;background:var(--bg2);
+  border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;margin-bottom:12px;
+  animation:pgIn .35s cubic-bezier(.4,0,.2,1);
+}
+.result-panel.show{display:block;}
+.res-hero{
+  background:linear-gradient(150deg,var(--brand-l),var(--brand-d));
+  padding:24px;color:#fff;text-align:center;
+}
+.res-bp{
+  font-family:'Fraunces',serif;
+  font-size:3.2rem;font-weight:700;line-height:1;margin-bottom:6px;
+}
+.res-cat{font-size:.95rem;font-weight:600;opacity:.88;}
+.res-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--border);
+}
+.res-cell{background:var(--bg2);padding:14px 10px;text-align:center;}
+.res-cv{font-family:'DM Mono',monospace;font-size:1.4rem;color:var(--brand);font-weight:500;margin-bottom:3px;}
+.res-cl{font-size:.65rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;}
+.res-advice{padding:14px 18px;font-size:.84rem;color:var(--text2);line-height:1.65;border-top:1px solid var(--border);}
+.res-actions{padding:12px 18px;display:flex;gap:8px;border-top:1px solid var(--border);}
+.res-act-btn{
+  flex:1;padding:9px;border-radius:var(--r3);
+  border:1.5px solid var(--border);background:var(--bg3);
+  font-size:.8rem;font-weight:600;color:var(--text);
+  transition:all .2s;
+}
+.res-act-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand);}
+.res-act-btn.speaking{background:var(--brand);color:#fff;border-color:var(--brand);}
+
+/* ══════════════════════════════════════════
+   DIARY PAGE
+══════════════════════════════════════════ */
+.stats-bar{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;margin-bottom:12px;
+}
+.stats-bar-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:12px;}
+.stats-4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;}
+.s4v{font-family:'DM Mono',monospace;font-size:1.15rem;color:var(--brand);font-weight:500;}
+.s4l{font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-top:3px;}
+
+/* Calendar */
+.cal-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:12px;}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.cal-nav-btn{
+  width:34px;height:34px;border-radius:var(--r3);
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);font-size:1.1rem;transition:all .2s;
+}
+.cal-nav-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand);}
+.cal-mo{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;}
+.cdn{font-size:.65rem;font-weight:700;color:var(--text3);padding:7px 0;text-transform:uppercase;}
+.cd{
+  padding:9px 3px;border-radius:var(--r3);font-size:.83rem;
+  transition:all .15s;cursor:pointer;position:relative;
+}
+.cd:hover{background:var(--bg3);}
+.cd.today{background:var(--brand-glow);color:var(--brand);font-weight:700;}
+.cd.has-data::after{
+  content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;background:var(--brand);
+}
+.cd.other{color:var(--border);}
+
+/* History items */
+.hitem{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;margin-bottom:10px;transition:all .2s;
+}
+.hitem:hover{box-shadow:var(--shadow);}
+.hitem-top{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;
+}
+.hbp{
+  background:linear-gradient(135deg,var(--brand-l),var(--brand-d));
+  color:#fff;padding:7px 12px;border-radius:var(--r3);
+  font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;white-space:nowrap;
+}
+.hinfo{flex:1;}
+.htime{font-size:.75rem;color:var(--text2);margin-bottom:3px;}
+.hcat{font-weight:600;font-size:.88rem;}
+.hchev{color:var(--text3);transition:transform .2s;}
+.hitem.open .hchev{transform:rotate(180deg);}
+.hdetails{
+  display:none;grid-template-columns:repeat(4,1fr);
+  gap:1px;background:var(--border);border-top:1px solid var(--border);
+}
+.hitem.open .hdetails{display:grid;}
+.hdc{background:var(--bg2);padding:12px 8px;text-align:center;}
+.hdcv{font-family:'DM Mono',monospace;font-size:1.05rem;color:var(--brand);font-weight:500;}
+.hdcl{font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-top:3px;}
+
+/* ══════════════════════════════════════════
+   ALERTS PAGE
+══════════════════════════════════════════ */
+.alert-item{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;margin-bottom:10px;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.aic{
+  width:40px;height:40px;flex-shrink:0;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;font-size:1.25rem;
+}
+.aic.warn{background:#fffbeb;}
+.aic.info{background:var(--brand-glow);}
+.aic.ok{background:#f0fdf4;}
+.aid{flex:1;}
+.aiti{font-weight:600;font-size:.88rem;margin-bottom:3px;}
+.aidc{font-size:.78rem;color:var(--text2);}
+.aitm{font-size:.68rem;color:var(--text3);margin-top:4px;font-family:'DM Mono',monospace;}
+
+/* ══════════════════════════════════════════
+   LEARN PAGE — with AUDIO
+══════════════════════════════════════════ */
+.learn-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ltile{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;cursor:pointer;transition:all .25s;
+}
+.ltile:hover{transform:translateY(-5px);box-shadow:var(--shadow);}
+.lthumb{
+  height:110px;display:flex;align-items:center;justify-content:center;
+  font-size:2.6rem;position:relative;overflow:hidden;
+}
+.lthumb-ico{position:relative;z-index:1;}
+.ltile-body{padding:12px 14px;}
+.ltile-title{font-weight:600;font-size:.86rem;margin-bottom:7px;line-height:1.3;}
+.learn-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  padding:3px 9px;border-radius:20px;
+  background:var(--brand-glow);color:var(--brand);
+}
+
+/* Edu modal */
+.edu-modal{
+  display:none;position:fixed;inset:0;z-index:600;
+  background:rgba(0,0,0,.55);overflow-y:auto;padding:18px;
+  backdrop-filter:blur(4px);
+}
+.edu-modal.show{display:block;animation:pgIn .28s ease;}
+.edu-card{
+  background:var(--bg2);border-radius:var(--r);
+  max-width:600px;margin:0 auto;overflow:hidden;
+}
+.edu-hdr{
+  padding:26px 22px;position:relative;color:#fff;
+}
+.edu-close{
+  position:absolute;top:14px;right:14px;
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.18);color:#fff;font-size:1.15rem;
+  display:flex;align-items:center;justify-content:center;transition:background .2s;
+}
+.edu-close:hover{background:rgba(255,255,255,.3);}
+.edu-title-txt{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;margin-top:4px;}
+
+/* Audio controls in edu modal */
+.audio-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 22px;
+  background:var(--bg3);border-bottom:1px solid var(--border);
+}
+.audio-play-btn{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;transition:all .2s;flex-shrink:0;
+}
+.audio-play-btn:hover{transform:scale(1.08);background:var(--brand-d);}
+.audio-play-btn.playing{background:var(--danger);}
+.audio-info{flex:1;}
+.audio-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:2px;}
+.audio-progress-wrap{height:4px;background:var(--border);border-radius:4px;overflow:hidden;cursor:pointer;}
+.audio-prog{height:100%;background:var(--brand);width:0%;transition:width .5s linear;border-radius:4px;}
+.audio-time{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text2);white-space:nowrap;}
+.audio-speed-btn{
+  padding:4px 9px;border-radius:20px;
+  border:1px solid var(--border);background:var(--bg2);
+  font-size:.7rem;font-weight:700;color:var(--text2);
+  transition:all .2s;
+}
+.audio-speed-btn:hover{border-color:var(--brand);color:var(--brand);}
+
+.edu-body{padding:24px 22px;line-height:1.78;}
+.edu-body h3{
+  font-size:.9rem;font-weight:700;color:var(--brand);
+  margin:20px 0 8px;padding-left:10px;
+  border-left:3px solid var(--brand);
+}
+.edu-body p{font-size:.87rem;color:var(--text);margin-bottom:10px;}
+.edu-body ul{padding-left:18px;}
+.edu-body li{font-size:.87rem;color:var(--text2);margin-bottom:5px;}
+.edu-body strong{color:var(--text);}
+
+/* ══════════════════════════════════════════
+   THEME BOTTOM SHEET
+══════════════════════════════════════════ */
+.sheet-overlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+}
+.sheet-overlay.show{display:flex;align-items:flex-end;justify-content:center;}
+.bottom-sheet{
+  background:var(--bg2);border-radius:22px 22px 0 0;
+  padding:24px 20px calc(24px + env(safe-area-inset-bottom));
+  width:100%;max-width:600px;
+  animation:sheetUp .32s cubic-bezier(.34,1.56,.64,1);
+  transition:background .35s;
+}
+@keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.sheet-drag{width:32px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 18px;}
+.sheet-title{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;margin-bottom:16px;}
+
+.theme-swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;}
+.tswatch{border-radius:13px;overflow:hidden;border:2px solid transparent;cursor:pointer;transition:all .2s;}
+.tswatch.active{border-color:var(--brand);transform:scale(1.05);}
+.tswatch:hover{transform:scale(1.04);}
+.tswatch-color{height:52px;}
+.tswatch-lbl{padding:6px 8px;background:var(--bg3);font-size:.72rem;font-weight:600;color:var(--text);text-align:center;}
+
+.toggle-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 0;border-top:1px solid var(--border);
+}
+.toggle-row:first-of-type{border-top:none;}
+.trow-info{}
+.trow-lbl{font-weight:600;font-size:.9rem;}
+.trow-sub{font-size:.76rem;color:var(--text2);margin-top:2px;}
+.tswitch{
+  width:48px;height:26px;border-radius:13px;background:var(--border);
+  position:relative;cursor:pointer;border:none;transition:background .28s;flex-shrink:0;
+}
+.tswitch.on{background:var(--brand);}
+.tswitch::after{
+  content:'';position:absolute;width:20px;height:20px;
+  background:#fff;border-radius:50%;top:3px;left:3px;
+  transition:transform .28s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 1px 5px rgba(0,0,0,.18);
+}
+.tswitch.on::after{transform:translateX(22px);}
+
+/* ══════════════════════════════════════════
+   NAV BAR
+══════════════════════════════════════════ */
+.nav{
+  position:fixed;bottom:0;left:0;width:100%;z-index:200;
+  background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+  transition:background .35s,border-color .35s;
+}
+.nbtn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:7px 4px;border-radius:11px;color:var(--text3);
+  transition:all .2s;font-size:1.25rem;border:none;background:none;
+}
+.nbtn .nlbl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.nbtn.active{color:var(--brand);background:var(--brand-glow);}
+.nbtn .nbadge{
+  position:absolute;top:-2px;right:-2px;
+  width:8px;height:8px;background:var(--danger);border-radius:50%;
+  border:2px solid var(--bg2);
+}
+.nbtn-wrap{position:relative;}
+
+/* ══════════════════════════════════════════
+   EMPTY / UTIL
+══════════════════════════════════════════ */
+.empty{text-align:center;padding:50px 20px;color:var(--text2);}
+.empty-ico{font-size:3rem;opacity:.35;margin-bottom:12px;}
+.empty-txt{font-size:.88rem;}
+</style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="app-header">
-        <div class="header-left">
-            <button class="menu-btn">☰</button>
-            <div class="greeting">Hello,</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-logo">
+    <div class="logo-mark">❤️</div>
+    <div class="logo-name">PulseIQ</div>
+  </div>
+  <div class="hdr-right">
+    <button class="hdr-btn" id="hdr-theme-btn" title="Themes">🎨</button>
+    <button class="hdr-btn" id="hdr-sound-btn" title="Sound">🔊</button>
+    <div class="avatar">U</div>
+  </div>
+</div>
+
+<!-- ═══════════ HOME PAGE ═══════════ -->
+<div class="page active" id="home-page">
+  <div class="home-hero">
+    <div class="hero-sub" id="time-greet">Good morning</div>
+    <div class="hero-title">How is your<br><em>heart</em> today?</div>
+    <div class="orbit-stage">
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <button class="scan-core" id="scan-now-btn">
+        <div class="ci">👆</div>
+        <div class="cl">Scan Now</div>
+      </button>
+    </div>
+  </div>
+
+  <div class="sec-lbl" style="margin-bottom:10px;">My Metrics</div>
+  <div class="metrics-row">
+    <div class="mtile">
+      <div class="mico">💓</div>
+      <div class="mval" id="h-pulse">--</div>
+      <div class="mlbl">Pulse</div>
+      <div class="munit">bpm</div>
+    </div>
+    <div class="mtile">
+      <div class="mico">📈</div>
+      <div class="mval" id="h-hrv">--</div>
+      <div class="mlbl">HRV</div>
+      <div class="munit">ms</div>
+    </div>
+    <div class="mtile">
+      <div class="mico">😰</div>
+      <div class="mval" id="h-stress">--</div>
+      <div class="mlbl">Stress</div>
+      <div class="munit">/ 10</div>
+    </div>
+  </div>
+
+  <div class="bp-card">
+    <div class="bp-card-head">
+      <div class="bp-card-title">BP Trend (last 10)</div>
+      <div class="bp-badge" id="bp-badge">No data</div>
+    </div>
+    <div class="spark-wrap"><canvas class="spark" id="sparkline" height="56"></canvas></div>
+    <div class="spark-legend">
+      <div class="sl"><div class="sl-dot" style="background:var(--brand)"></div>Systolic</div>
+      <div class="sl"><div class="sl-dot" style="background:var(--warn)"></div>Diastolic</div>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-tag">Daily Tip</div>
+    <div class="tip-txt" id="tip-txt">—</div>
+  </div>
+</div>
+
+<!-- ═══════════ SCAN PAGE ═══════════ -->
+<div class="page" id="scan-page">
+  <div class="wrap">
+    <div class="page-head">
+      <div class="page-ico">📹</div>
+      <div class="page-title">New Measurement</div>
+    </div>
+    <div class="page-sub">Fill in your details then record a 10-second video</div>
+
+    <div class="card">
+      <div class="card-hd">Personal Info</div>
+      <div class="fgrid">
+        <div class="fg">
+          <label class="flbl">Age</label>
+          <input class="finput" type="number" id="age" placeholder="e.g. 32" min="18" max="110">
         </div>
-        <div class="user-avatar">U</div>
+        <div class="fg">
+          <label class="flbl">Sex</label>
+          <select class="finput" id="sex">
+            <option value="">Select</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flbl">Height (cm)</label>
+          <input class="finput" type="number" id="height" placeholder="170" min="100" max="250">
+        </div>
+        <div class="fg">
+          <label class="flbl">Weight (kg)</label>
+          <input class="finput" type="number" id="weight" placeholder="70" min="30" max="300">
+        </div>
+      </div>
+      <div class="fg" style="margin-bottom:0;">
+        <label class="flbl">BMI</label>
+        <div class="bmi-pill" id="bmi-pill">— Auto-calculated</div>
+      </div>
     </div>
 
-    <!-- Home Page -->
-    <div class="page active" id="home-page">
-        <div class="scan-section">
-            <button class="scan-button" id="scan-now-btn">
-                <div class="scan-icon">👆</div>
-                <div class="scan-text">Scan now</div>
-            </button>
+    <div class="card">
+      <div class="card-hd">Camera & Recording</div>
+      <div class="vid-shell" id="vid-shell">
+        <video id="vid" autoplay muted playsinline></video>
+        <div class="vid-ov" id="vid-ov">
+          <div class="fring">☝️</div>
+          <div class="vid-ov-txt">Cover the lens with your fingertip</div>
         </div>
+        <div class="wave-strip">
+          <div class="wv-lbl">PPG SIGNAL</div>
+          <canvas class="wv" id="waveform" height="54"></canvas>
+        </div>
+      </div>
 
-        <div class="metrics-section">
-            <div class="metrics-title">
-                <span>📊</span>
-                <span>My metrics</span>
-            </div>
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-icon">💓</div>
-                    <div class="metric-value" id="home-pulse">--</div>
-                    <div class="metric-label">Pulse</div>
-                    <div class="metric-status">bpm</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon">📈</div>
-                    <div class="metric-value" id="home-hrv">--</div>
-                    <div class="metric-label">HRV</div>
-                    <div class="metric-status">ms</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-icon">📊</div>
-                    <div class="metric-value" id="home-stress">--</div>
-                    <div class="metric-label">Stress</div>
-                </div>
-            </div>
-        </div>
+      <div class="timer-row" id="timer-row">
+        <div class="timer-badge"><div class="rec-dot"></div><span id="timer-txt">0s</span></div>
+        <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <button class="btn btn-ghost" id="start-cam-btn">📷 Start Camera</button>
+        <button class="btn btn-ghost" id="flash-btn">🔦 Flashlight</button>
+        <button class="btn btn-ok" id="rec-btn" disabled>⏺ Record 10 seconds</button>
+        <button class="btn btn-stop" id="stop-btn" disabled>⏹ Stop Recording</button>
+        <button class="btn btn-primary" id="analyze-btn" disabled>🔬 Analyse Blood Pressure</button>
+      </div>
     </div>
 
-    <!-- Scan/Recording Page -->
-    <div class="page" id="scan-page">
-        <div class="recording-page">
-            <div class="recording-header">
-                <div class="recording-title">Blood Pressure Measurement</div>
-                <div class="recording-subtitle">Please fill your information and record</div>
-            </div>
+    <div class="msg msg-e" id="emsg"></div>
+    <div class="msg msg-s" id="smsg"></div>
+    <div class="ld" id="ld"><div class="spinner"></div><div class="ld-txt">Analysing rPPG signal…</div></div>
 
-            <div class="form-card">
-                <div class="form-group">
-                    <label>Age (years)</label>
-                    <input type="number" id="age" placeholder="e.g., 30" min="18" max="100">
-                </div>
-                <div class="form-group">
-                    <label>Height (cm)</label>
-                    <input type="number" id="height" placeholder="e.g., 170" min="100" max="250">
-                </div>
-                <div class="form-group">
-                    <label>Weight (kg)</label>
-                    <input type="number" id="weight" placeholder="e.g., 70" min="30" max="300">
-                </div>
-                <div class="form-group">
-                    <label>BMI (calculated)</label>
-                    <input type="text" id="bmi" readonly placeholder="Auto-calculated">
-                </div>
-            </div>
+    <div class="result-panel" id="result-panel">
+      <div class="res-hero">
+        <div class="res-bp" id="r-bp">—/—</div>
+        <div class="res-cat" id="r-cat">—</div>
+      </div>
+      <div class="res-grid">
+        <div class="res-cell"><div class="res-cv" id="r-pulse">—</div><div class="res-cl">Pulse bpm</div></div>
+        <div class="res-cell"><div class="res-cv" id="r-hrv">—</div><div class="res-cl">HRV ms</div></div>
+        <div class="res-cell"><div class="res-cv" id="r-stress">—</div><div class="res-cl">Stress /10</div></div>
+      </div>
+      <div class="res-advice" id="r-advice">—</div>
+      <div class="res-actions">
+        <button class="res-act-btn" id="copy-btn">📋 Copy Result</button>
+        <button class="res-act-btn" id="speak-btn">🔊 Read Aloud</button>
+        <button class="res-act-btn" id="share-btn">↗️ Share</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-            <div class="form-card">
-                <div class="video-container" id="video-container">
-                    <video id="video" autoplay muted playsinline></video>
-                    <div class="video-overlay">
-                        <div class="finger-guide">☝️</div>
-                        <h3>Place fingertip here</h3>
-                    </div>
-                </div>
+<!-- ═══════════ DIARY PAGE ═══════════ -->
+<div class="page" id="diary-page">
+  <div class="wrap">
+    <div class="stats-bar">
+      <div class="stats-bar-title">This Month — Averages</div>
+      <div class="stats-4">
+        <div><div class="s4v" id="avg-sbp">—</div><div class="s4l">Systolic</div></div>
+        <div><div class="s4v" id="avg-dbp">—</div><div class="s4l">Diastolic</div></div>
+        <div><div class="s4v" id="avg-pulse">—</div><div class="s4l">Pulse</div></div>
+        <div><div class="s4v" id="total-r">0</div><div class="s4l">Readings</div></div>
+      </div>
+    </div>
+    <div class="cal-card">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="prev-mo">‹</button>
+        <div class="cal-mo" id="cal-mo-lbl">—</div>
+        <button class="cal-nav-btn" id="next-mo">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <div id="history-list"></div>
+  </div>
+</div>
 
-                <div class="timer" id="timer">Recording: 0s</div>
+<!-- ═══════════ ALERTS PAGE ═══════════ -->
+<div class="page" id="alerts-page">
+  <div class="wrap" id="alerts-list">
+    <div class="empty"><div class="empty-ico">🔔</div><div class="empty-txt">No alerts yet</div></div>
+  </div>
+</div>
 
-                <div class="progress-bar">
-                    <div class="progress" id="progress"></div>
-                </div>
+<!-- ═══════════ LEARN PAGE ═══════════ -->
+<div class="page" id="learn-page">
+  <div class="wrap">
+    <div class="learn-grid" id="learn-grid"></div>
+  </div>
+</div>
 
-                <button class="btn btn-primary" id="start-camera">📹 Start Camera</button>
-                <button class="btn btn-warning" id="flashlight-btn">🔦 Flashlight Off</button>
-                <button class="btn btn-success" id="start-record" disabled>⏺️ Start Recording (10s)</button>
-                <button class="btn btn-danger" id="stop-record" disabled>⏹️ Stop Recording</button>
-                <button class="btn btn-primary" id="analyze" disabled>🔬 Analyze Blood Pressure</button>
-            </div>
-
-            <div class="message message-error" id="error-msg"></div>
-            <div class="message message-success" id="success-msg"></div>
-
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <h3>Processing...</h3>
-            </div>
+<!-- ═══════════ EDU MODAL ═══════════ -->
+<div class="edu-modal" id="edu-modal">
+  <div class="edu-card">
+    <div class="edu-hdr" id="edu-hdr">
+      <button class="edu-close" id="edu-close">×</button>
+      <div style="font-size:2rem;margin-bottom:4px;" id="edu-icon">📏</div>
+      <div class="edu-title-txt" id="edu-title">—</div>
+    </div>
+    <!-- AUDIO BAR -->
+    <div class="audio-bar">
+      <button class="audio-play-btn" id="audio-play-btn">▶</button>
+      <div class="audio-info">
+        <div class="audio-label">Listen to this lesson</div>
+        <div class="audio-progress-wrap" id="audio-prog-wrap">
+          <div class="audio-prog" id="audio-prog"></div>
         </div>
+      </div>
+      <div class="audio-time" id="audio-time">0:00</div>
+      <button class="audio-speed-btn" id="audio-speed-btn">1×</button>
     </div>
+    <div class="edu-body" id="edu-body"></div>
+  </div>
+</div>
 
-    <!-- Diary/History Page -->
-    <div class="page" id="diary-page">
-        <div class="page-content">
-            <div class="calendar-header">
-                <div class="calendar-nav">
-                    <button id="prev-month">‹</button>
-                    <div class="calendar-month" id="current-month">October 2025</div>
-                    <button id="next-month">›</button>
-                </div>
-                <div class="calendar-grid" id="calendar"></div>
-            </div>
+<!-- ═══════════ THEME SHEET ═══════════ -->
+<div class="sheet-overlay" id="theme-overlay">
+  <div class="bottom-sheet">
+    <div class="sheet-drag"></div>
+    <div class="sheet-title">Appearance & Sound</div>
+    <div class="theme-swatches" id="theme-swatches"></div>
 
-            <div id="measurements-list">
-                <div class="empty-state">
-                    <div class="empty-icon">📋</div>
-                    <div>No measurements yet</div>
-                </div>
-            </div>
+    <div class="toggle-row">
+      <div class="trow-info">
+        <div class="trow-lbl">🔊 Voice Feedback</div>
+        <div class="trow-sub">Read scan results aloud</div>
+      </div>
+      <button class="tswitch" id="sw-voice"></button>
+    </div>
+    <div class="toggle-row">
+      <div class="trow-info">
+        <div class="trow-lbl">🎵 Heartbeat Sounds</div>
+        <div class="trow-sub">Simulate heartbeat while scanning</div>
+      </div>
+      <button class="tswitch" id="sw-hb"></button>
+    </div>
+    <div class="toggle-row">
+      <div class="trow-info">
+        <div class="trow-lbl">📳 Haptic Feedback</div>
+        <div class="trow-sub">Vibrate on key events</div>
+      </div>
+      <button class="tswitch" id="sw-haptic"></button>
+    </div>
+    <div class="toggle-row">
+      <div class="trow-info">
+        <div class="trow-lbl">🎓 Auto-read Learn Articles</div>
+        <div class="trow-sub">Start audio automatically when opening lessons</div>
+      </div>
+      <button class="tswitch" id="sw-autoread"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ NAV ═══════════ -->
+<div class="nav">
+  <button class="nbtn active" data-pg="home">❤️<span class="nlbl">Home</span></button>
+  <button class="nbtn" data-pg="scan">📹<span class="nlbl">Scan</span></button>
+  <button class="nbtn" data-pg="diary">📊<span class="nlbl">Diary</span></button>
+  <button class="nbtn" data-pg="alerts">
+    <div class="nbtn-wrap">🔔<span class="nbadge" id="alert-badge" style="display:none;"></span></div>
+    <span class="nlbl">Alerts</span>
+  </button>
+  <button class="nbtn" data-pg="learn">📚<span class="nlbl">Learn</span></button>
+</div>
+
+<!-- ═══════════ SCRIPT ═══════════ -->
+<script>
+/* ─────────────────────────────────────────
+   CONSTANTS & STATE
+───────────────────────────────────────── */
+const TIPS = [
+  "Rest 5 minutes before measuring — activity temporarily raises BP.",
+  "Measure at the same time each day for consistent trends.",
+  "Keep your arm at heart level for accurate readings.",
+  "Avoid caffeine 30 minutes before scanning.",
+  "Three readings, 1 minute apart, then average them.",
+  "Stress and anxiety can temporarily raise both BP and pulse.",
+  "Staying hydrated helps maintain healthy blood viscosity.",
+  "Slow, deep breathing for 2 minutes can lower systolic BP by 5–10 mmHg.",
+  "High sodium is one of the most modifiable BP risk factors.",
+  "Regular aerobic exercise can reduce resting BP by 4–9 mmHg.",
+  "Dark chocolate (70%+) contains flavonoids that may modestly lower BP.",
+  "Garlic supplements have shown small but significant BP reductions in studies.",
+];
+
+const THEMES = [
+  {id:'teal',   label:'Teal',    colors:['#4DB6AC','#00897B']},
+  {id:'ocean',  label:'Ocean',   colors:['#42A5F5','#1565C0']},
+  {id:'violet', label:'Violet',  colors:['#9575CD','#512DA8']},
+  {id:'rose',   label:'Rose',    colors:['#EC407A','#880E4F']},
+  {id:'amber',  label:'Amber',   colors:['#FFCA28','#E65100']},
+  {id:'slate',  label:'Slate',   colors:['#78909C','#37474F']},
+  {id:'dark',   label:'Dark',    colors:['#1e3a5f','#0d1b2e']},
+  {id:'amoled', label:'AMOLED',  colors:['#000000','#1a1a1a']},
+];
+
+const EDU = {
+  measurement:{
+    icon:'📏', title:'How to Measure Correctly',
+    color:'linear-gradient(135deg,#667eea,#764ba2)',
+    body:`
+      <h3>Preparation</h3>
+      <p>Sit quietly for at least 5 minutes. Avoid coffee, exercise, or smoking for 30 minutes prior.</p>
+      <h3>Technique</h3>
+      <ul>
+        <li>Sit with back supported, feet flat on the floor</li>
+        <li>Cover the camera lens completely with your fingertip</li>
+        <li>Keep your hand still — motion degrades signal quality</li>
+        <li>Breathe normally throughout the 10-second recording</li>
+        <li>Good lighting improves the camera sensor's detection</li>
+      </ul>
+      <h3>Best Times to Measure</h3>
+      <ul>
+        <li>Morning: Before breakfast and medication</li>
+        <li>Evening: Before dinner</li>
+        <li>Take 2–3 readings and note the average</li>
+        <li>Record your readings in the Diary for trends</li>
+      </ul>
+      <h3>Understanding Your Numbers</h3>
+      <p>Blood pressure is written as Systolic/Diastolic. Systolic is the pressure when your heart beats. Diastolic is the pressure between beats. Both numbers matter.</p>
+    `,
+    narration:`Welcome to the measurement guide. To get accurate readings, prepare by sitting quietly for at least 5 minutes. Avoid coffee, exercise, or smoking for 30 minutes before measuring.
+
+For technique: sit with your back supported and feet flat on the floor. Cover the camera lens completely with your fingertip and keep your hand still — any motion degrades signal quality. Breathe normally throughout the 10-second recording. Good lighting improves the camera sensor's detection.
+
+The best times to measure are in the morning before breakfast and medication, and in the evening before dinner. Take 2 to 3 readings and note the average.
+
+Blood pressure is written as Systolic over Diastolic. Systolic is the pressure when your heart beats. Diastolic is the pressure between beats. Both numbers are important.`
+  },
+  hypertension:{
+    icon:'🩺', title:'What Is Hypertension?',
+    color:'linear-gradient(135deg,#4DB6AC,#26A69A)',
+    body:`
+      <h3>Definition</h3>
+      <p>Hypertension is persistently elevated blood pressure. Often called the "silent killer" — it usually has no symptoms yet can cause serious damage over time.</p>
+      <h3>Blood Pressure Categories (AHA 2024)</h3>
+      <ul>
+        <li><strong>Normal:</strong> below 120/80 mmHg</li>
+        <li><strong>Elevated:</strong> 120–129 / below 80 mmHg</li>
+        <li><strong>Stage 1:</strong> 130–139 / 80–89 mmHg</li>
+        <li><strong>Stage 2:</strong> 140+ / 90+ mmHg</li>
+        <li><strong>Crisis:</strong> above 180 / above 120 mmHg — seek emergency care</li>
+      </ul>
+      <h3>Key Risk Factors</h3>
+      <ul>
+        <li>Age and family history</li>
+        <li>Obesity and sedentary lifestyle</li>
+        <li>High sodium diet, alcohol, stress</li>
+        <li>Smoking and certain medications</li>
+      </ul>
+    `,
+    narration:`Hypertension is persistently elevated blood pressure — often called the silent killer because it usually has no symptoms, yet can cause serious damage over time.
+
+According to the American Heart Association 2024 guidelines, blood pressure is categorised as follows: Normal is below 120 over 80 millimetres of mercury. Elevated is 120 to 129 systolic with diastolic below 80. Stage 1 hypertension is 130 to 139 systolic or 80 to 89 diastolic. Stage 2 is 140 or higher systolic, or 90 or higher diastolic. A hypertensive crisis — where you should seek emergency care — is above 180 over 120.
+
+Key risk factors include age and family history, obesity and a sedentary lifestyle, a high sodium diet, alcohol consumption, stress, and smoking.`
+  },
+  consequences:{
+    icon:'❤️', title:'Consequences of High BP',
+    color:'linear-gradient(135deg,#ff6b6b,#c0392b)',
+    body:`
+      <h3>Heart & Blood Vessels</h3>
+      <ul><li>Heart attack and heart failure</li><li>Stroke and aneurysm</li><li>Coronary artery disease</li><li>Peripheral artery disease</li></ul>
+      <h3>Brain</h3>
+      <ul><li>Cognitive decline and dementia</li><li>Transient ischaemic attacks (TIAs)</li><li>Increased stroke risk</li></ul>
+      <h3>Kidneys & Eyes</h3>
+      <ul><li>Chronic kidney disease and kidney failure</li><li>Retinal damage and vision loss</li></ul>
+      <p><strong>The good news:</strong> Early detection and lifestyle changes can prevent most of these complications. Regular monitoring is key.</p>
+    `,
+    narration:`Uncontrolled high blood pressure can have serious consequences across multiple organ systems.
+
+For the heart and blood vessels: it increases risk of heart attack, heart failure, stroke, aneurysm, coronary artery disease, and peripheral artery disease.
+
+For the brain: hypertension can cause cognitive decline, dementia, transient ischaemic attacks, and significantly raises stroke risk.
+
+For the kidneys and eyes: it can lead to chronic kidney disease, kidney failure, retinal damage, and vision loss.
+
+The good news is that early detection and lifestyle changes can prevent most of these complications. Regular monitoring with PulseIQ is an important first step.`
+  },
+  healthy:{
+    icon:'🥗', title:'Healthy Habits',
+    color:'linear-gradient(135deg,#56ab2f,#a8e063)',
+    body:`
+      <h3>The DASH Diet</h3>
+      <p>Clinically proven to lower BP by 8–14 mmHg. Focus on fruits, vegetables, whole grains, lean proteins, and low-fat dairy. Limit sodium to under 2,300 mg per day.</p>
+      <h3>Exercise</h3>
+      <ul>
+        <li>150 minutes/week of moderate aerobic activity</li>
+        <li>Walking, swimming, cycling, dancing</li>
+        <li>Strength training 2× per week</li>
+        <li>Even short 10-minute walks help</li>
+      </ul>
+      <h3>Sleep & Recovery</h3>
+      <ul><li>7–9 hours of quality sleep nightly</li><li>Poor sleep raises cortisol and BP</li><li>Consistent sleep schedule matters</li></ul>
+      <h3>Stress Management</h3>
+      <ul><li>Mindfulness and meditation</li><li>Yoga and tai chi</li><li>Deep breathing exercises daily</li></ul>
+    `,
+    narration:`Good news — lifestyle changes can dramatically improve your blood pressure.
+
+The DASH diet — Dietary Approaches to Stop Hypertension — is clinically proven to lower blood pressure by 8 to 14 millimetres of mercury. Focus on fruits, vegetables, whole grains, lean proteins, and low-fat dairy. Limit sodium to under 2,300 milligrams per day.
+
+For exercise: aim for 150 minutes per week of moderate aerobic activity. Walking, swimming, cycling, and dancing all count. Add strength training twice a week. Even short 10-minute walks can help.
+
+Sleep matters too. Aim for 7 to 9 hours of quality sleep nightly. Poor sleep raises cortisol levels and blood pressure. A consistent sleep schedule helps.
+
+For stress management, try mindfulness, meditation, yoga, tai chi, or daily deep breathing exercises.`
+  },
+  avoid:{
+    icon:'🚫', title:'What to Avoid',
+    color:'linear-gradient(135deg,#f093fb,#f5576c)',
+    body:`
+      <h3>Smoking</h3>
+      <p>Every cigarette immediately raises BP. Smoking also accelerates plaque buildup in arteries. Quitting is the single most impactful change you can make.</p>
+      <h3>Excess Alcohol</h3>
+      <ul><li>Limit to 1 drink/day for women, 2 for men</li><li>Heavy drinking causes resistant hypertension</li><li>Alcohol also disrupts sleep quality</li></ul>
+      <h3>High-Sodium Foods</h3>
+      <ul><li>Processed meats, canned goods, sauces</li><li>Fast food, salty snacks, pickles</li><li>Check food labels — aim for &lt;600mg per serving</li></ul>
+      <h3>Caffeine & Energy Drinks</h3>
+      <p>Caffeine causes acute BP spikes. Limit to 2–3 cups of coffee daily. Energy drinks combine caffeine with other stimulants — best avoided.</p>
+      <h3>Prolonged Sitting</h3>
+      <p>Stand up and walk for 5 minutes every hour. Sedentary time independently raises cardiovascular risk even if you exercise regularly.</p>
+    `,
+    narration:`There are several lifestyle factors that can worsen blood pressure.
+
+Smoking: every cigarette immediately raises blood pressure and accelerates plaque buildup in arteries. Quitting is the single most impactful change you can make.
+
+Excess alcohol: limit to 1 drink per day for women and 2 for men. Heavy drinking causes resistant hypertension and disrupts sleep quality.
+
+High sodium foods: watch out for processed meats, canned goods, fast food, salty snacks, and sauces. Check food labels and aim for less than 600 milligrams of sodium per serving.
+
+Caffeine and energy drinks cause acute blood pressure spikes. Limit to 2 to 3 cups of coffee daily. Energy drinks combine caffeine with other stimulants and are best avoided.
+
+Finally, prolonged sitting: stand up and walk for 5 minutes every hour. Sedentary time independently raises cardiovascular risk even if you exercise regularly.`
+  },
+  hrv:{
+    icon:'📈', title:'Understanding HRV',
+    color:'linear-gradient(135deg,#5C6BC0,#3F51B5)',
+    body:`
+      <h3>What Is HRV?</h3>
+      <p>Heart Rate Variability measures millisecond variations between consecutive heartbeats. Counterintuitively, more variation is generally better — it means your autonomic nervous system is flexible and responsive.</p>
+      <h3>Why It Matters</h3>
+      <ul>
+        <li><strong>High HRV:</strong> Better stress resilience, cardiovascular fitness, recovery capacity</li>
+        <li><strong>Low HRV:</strong> Fatigue, overtraining, chronic stress, illness, or inflammation</li>
+      </ul>
+      <h3>Typical Ranges (RMSSD method)</h3>
+      <ul>
+        <li>Ages 20–30: 55–105 ms</li>
+        <li>Ages 40–50: 25–55 ms</li>
+        <li>Ages 60+: 15–30 ms</li>
+      </ul>
+      <h3>How to Improve HRV</h3>
+      <ul><li>Regular aerobic exercise</li><li>Quality sleep — the single biggest driver</li><li>Resonance breathing: 5 seconds in, 5 seconds out</li><li>Reduce alcohol and stress</li></ul>
+    `,
+    narration:`Heart Rate Variability, or HRV, measures millisecond variations between consecutive heartbeats. Counterintuitively, more variation is generally better — it means your autonomic nervous system is flexible and responsive.
+
+High HRV indicates better stress resilience, cardiovascular fitness, and recovery capacity. Low HRV may indicate fatigue, overtraining, chronic stress, illness, or inflammation.
+
+Typical ranges using the RMSSD method are: 55 to 105 milliseconds for ages 20 to 30. 25 to 55 milliseconds for ages 40 to 50. And 15 to 30 milliseconds for those over 60.
+
+To improve your HRV: regular aerobic exercise helps significantly. Quality sleep is the single biggest driver of HRV. Resonance breathing — 5 seconds inhale, 5 seconds exhale — has been shown to improve HRV measurably. Reducing alcohol and managing stress are also important.`
+  },
+  stress:{
+    icon:'😰', title:'Stress & Your Heart',
+    color:'linear-gradient(135deg,#f7971e,#ffd200)',
+    body:`
+      <h3>The Stress–BP Connection</h3>
+      <p>Acute stress triggers the fight-or-flight response: adrenaline surges, heart rate rises, and blood vessels constrict. Chronic stress keeps this system activated permanently.</p>
+      <h3>Physiological Impact</h3>
+      <ul>
+        <li>Cortisol causes sodium retention → BP rises</li>
+        <li>Chronic inflammation damages artery walls</li>
+        <li>Poor stress management disrupts sleep cycles</li>
+        <li>Stress often leads to unhealthy coping (food, alcohol, smoking)</li>
+      </ul>
+      <h3>Evidence-Based Techniques</h3>
+      <ul>
+        <li><strong>Box breathing:</strong> 4 in, 4 hold, 4 out, 4 hold — repeat 4 times</li>
+        <li>Progressive muscle relaxation</li>
+        <li>Cold water face immersion (activates dive reflex)</li>
+        <li>Regular physical activity</li>
+        <li>Strong social connections</li>
+      </ul>
+    `,
+    narration:`Stress has a direct and measurable impact on blood pressure and heart health.
+
+Acute stress triggers the fight-or-flight response: adrenaline surges, heart rate rises, and blood vessels constrict. Chronic stress keeps this system activated permanently.
+
+The physiological impact includes: cortisol causing sodium retention, which raises blood pressure. Chronic inflammation damages artery walls. Poor stress management disrupts sleep cycles. And stress often leads to unhealthy coping behaviours like overeating, alcohol, and smoking.
+
+Evidence-based stress reduction techniques include box breathing — that's 4 seconds in, hold for 4, out for 4, hold for 4, repeated 4 times. Also helpful are progressive muscle relaxation, cold water face immersion which activates the dive reflex, regular physical activity, and maintaining strong social connections.`
+  },
+  bmi:{
+    icon:'⚖️', title:'BMI & Blood Pressure',
+    color:'linear-gradient(135deg,#a18cd1,#fbc2eb)',
+    body:`
+      <h3>The BMI–BP Link</h3>
+      <p>Every 5-unit increase in BMI is associated with roughly a 4 mmHg rise in systolic BP. Obesity is one of the most powerful — and most modifiable — BP risk factors.</p>
+      <h3>BMI Categories (WHO)</h3>
+      <ul>
+        <li><strong>Underweight:</strong> Below 18.5</li>
+        <li><strong>Normal:</strong> 18.5–24.9</li>
+        <li><strong>Overweight:</strong> 25–29.9</li>
+        <li><strong>Obese:</strong> 30 or above</li>
+      </ul>
+      <h3>Impact of Weight Loss</h3>
+      <p>Losing just 5–10% of body weight can reduce systolic BP by 5–20 mmHg — comparable to many blood pressure medications.</p>
+      <h3>Beyond BMI</h3>
+      <p>Waist circumference is often a better predictor of cardiovascular risk. Target: below 94 cm for men, below 80 cm for women.</p>
+    `,
+    narration:`Body mass index, or BMI, has a meaningful relationship with blood pressure.
+
+Every 5-unit increase in BMI is associated with roughly a 4 millimetre of mercury rise in systolic blood pressure. Obesity is one of the most powerful — and most modifiable — blood pressure risk factors.
+
+According to the World Health Organisation: underweight is a BMI below 18.5. Normal weight is 18.5 to 24.9. Overweight is 25 to 29.9. Obese is 30 or above.
+
+The impact of weight loss is significant: losing just 5 to 10 percent of body weight can reduce systolic blood pressure by 5 to 20 millimetres of mercury — comparable to the effect of many blood pressure medications.
+
+Beyond BMI, waist circumference is often a better predictor of cardiovascular risk. Target below 94 centimetres for men and below 80 centimetres for women.`
+  },
+};
+
+/* ─────────────────────────────────────────
+   APP STATE
+───────────────────────────────────────── */
+const S = {
+  page: 'home',
+  calDate: new Date(),
+  measurements: JSON.parse(localStorage.getItem('piq_m') || '[]'),
+  theme: localStorage.getItem('piq_theme') || 'teal',
+  voiceOn: localStorage.getItem('piq_voice') !== 'false',
+  hbOn: localStorage.getItem('piq_hb') === 'true',
+  hapticOn: localStorage.getItem('piq_haptic') !== 'false',
+  autoReadOn: localStorage.getItem('piq_autoread') === 'true',
+  stream: null, recorder: null, chunks: [],
+  recording: false, startTime: 0, timerInt: null,
+  flashOn: false,
+  waveCtx: null, waveAnim: null, waveData: [],
+  audioCtx: null, hbInterval: null,
+  tts: null, ttsActive: false, ttsSpeed: 1, ttsProgress: 0, ttsDuration: 0,
+  currentEduKey: null,
+};
+
+/* ─────────────────────────────────────────
+   INIT
+───────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  applyTheme(S.theme);
+  buildThemeSheet();
+  buildLearnGrid();
+  updateHomeMetrics();
+  drawSparkline();
+  setDailyTip();
+  setGreeting();
+  loadToggles();
+  refreshAlertBadge();
+});
+
+function setGreeting() {
+  const h = new Date().getHours();
+  document.getElementById('time-greet').textContent =
+    h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}
+
+/* ─────────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────────── */
+document.querySelectorAll('.nbtn').forEach(b => b.addEventListener('click', () => goPage(b.dataset.pg)));
+document.getElementById('scan-now-btn').addEventListener('click', () => goPage('scan'));
+
+function goPage(pg) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nbtn').forEach(b => b.classList.remove('active'));
+  document.getElementById(pg + '-page').classList.add('active');
+  document.querySelector(`.nbtn[data-pg="${pg}"]`).classList.add('active');
+  S.page = pg;
+  if (pg === 'home') { updateHomeMetrics(); drawSparkline(); }
+  if (pg === 'diary') { renderCal(); renderHistory(); computeStats(); }
+  if (pg === 'alerts') renderAlerts();
+}
+
+/* ─────────────────────────────────────────
+   THEME
+───────────────────────────────────────── */
+function applyTheme(id) {
+  S.theme = id; localStorage.setItem('piq_theme', id);
+  document.body.removeAttribute('data-theme');
+  document.body.setAttribute('data-theme', id);
+  drawSparkline();
+}
+
+function buildThemeSheet() {
+  const el = document.getElementById('theme-swatches');
+  el.innerHTML = THEMES.map(t => `
+    <div class="tswatch ${t.id===S.theme?'active':''}" data-tid="${t.id}">
+      <div class="tswatch-color" style="background:linear-gradient(135deg,${t.colors[0]},${t.colors[1]});"></div>
+      <div class="tswatch-lbl">${t.label}</div>
+    </div>
+  `).join('');
+  el.querySelectorAll('.tswatch').forEach(sw => sw.addEventListener('click', () => {
+    applyTheme(sw.dataset.tid);
+    el.querySelectorAll('.tswatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+  }));
+}
+
+document.getElementById('hdr-theme-btn').addEventListener('click', () => {
+  buildThemeSheet(); document.getElementById('theme-overlay').classList.add('show');
+});
+document.getElementById('theme-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+});
+
+/* ─────────────────────────────────────────
+   TOGGLE SWITCHES
+───────────────────────────────────────── */
+function loadToggles() {
+  setSwitch('sw-voice', S.voiceOn);
+  setSwitch('sw-hb', S.hbOn);
+  setSwitch('sw-haptic', S.hapticOn);
+  setSwitch('sw-autoread', S.autoReadOn);
+  updateSoundIcon();
+}
+function setSwitch(id, val) { document.getElementById(id).classList.toggle('on', val); }
+
+[['sw-voice','voiceOn','piq_voice'],['sw-hb','hbOn','piq_hb'],['sw-haptic','hapticOn','piq_haptic'],['sw-autoread','autoReadOn','piq_autoread']].forEach(([id,key,ls]) => {
+  document.getElementById(id).addEventListener('click', function() {
+    S[key] = !S[key]; localStorage.setItem(ls, S[key]); setSwitch(id, S[key]);
+    if (key === 'voiceOn') updateSoundIcon();
+    if (key === 'hbOn' && !S[key] && S.hbInterval) { clearInterval(S.hbInterval); S.hbInterval = null; }
+  });
+});
+
+document.getElementById('hdr-sound-btn').addEventListener('click', () => {
+  S.voiceOn = !S.voiceOn; localStorage.setItem('piq_voice', S.voiceOn);
+  setSwitch('sw-voice', S.voiceOn); updateSoundIcon();
+});
+function updateSoundIcon() {
+  document.getElementById('hdr-sound-btn').textContent = S.voiceOn ? '🔊' : '🔇';
+}
+
+/* ─────────────────────────────────────────
+   AUDIO ENGINE
+───────────────────────────────────────── */
+function getACtx() {
+  if (!S.audioCtx) S.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return S.audioCtx;
+}
+function beep(freq=440, dur=0.07, vol=0.15, type='sine') {
+  try {
+    const ctx = getACtx();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = freq; o.type = type;
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    o.start(); o.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+function heartbeatSound() { beep(65,0.11,0.28,'sine'); setTimeout(()=>beep(54,0.08,0.18,'sine'),110); }
+function vibrate(p=[30]) { if (S.hapticOn && navigator.vibrate) navigator.vibrate(p); }
+
+function speak(text) {
+  if (!S.voiceOn || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.95; u.pitch = 1.0;
+  window.speechSynthesis.speak(u);
+}
+
+/* ─────────────────────────────────────────
+   TTS FOR LEARN (with progress tracking)
+───────────────────────────────────────── */
+let ttsUtterance = null, ttsTimer = null;
+let ttsPaused = false, ttsCharIdx = 0, ttsTotalLen = 0;
+
+function startLearnAudio(key) {
+  stopLearnAudio();
+  const ed = EDU[key];
+  if (!window.speechSynthesis) { return; }
+  S.currentEduKey = key;
+
+  const txt = ed.narration;
+  ttsTotalLen = txt.length;
+  ttsCharIdx = 0;
+  ttsPaused = false;
+
+  ttsUtterance = new SpeechSynthesisUtterance(txt);
+  ttsUtterance.rate = S.ttsSpeed;
+  ttsUtterance.pitch = 1.0;
+
+  ttsUtterance.onboundary = e => {
+    ttsCharIdx = e.charIndex;
+    const pct = Math.min(ttsCharIdx / ttsTotalLen * 100, 100);
+    document.getElementById('audio-prog').style.width = pct + '%';
+    const secs = Math.round((ttsTotalLen - ttsCharIdx) / (ttsTotalLen) * estimateSeconds(txt));
+    document.getElementById('audio-time').textContent = fmtTime(secs < 0 ? 0 : secs);
+  };
+  ttsUtterance.onend = () => {
+    document.getElementById('audio-prog').style.width = '100%';
+    document.getElementById('audio-play-btn').textContent = '▶';
+    document.getElementById('audio-play-btn').classList.remove('playing');
+    document.getElementById('audio-time').textContent = '0:00';
+    setTimeout(()=>document.getElementById('audio-prog').style.width='0%', 1000);
+    ttsPaused = false;
+  };
+
+  window.speechSynthesis.speak(ttsUtterance);
+  document.getElementById('audio-play-btn').textContent = '⏸';
+  document.getElementById('audio-play-btn').classList.add('playing');
+  document.getElementById('audio-time').textContent = fmtTime(estimateSeconds(txt));
+}
+
+function pauseLearnAudio() {
+  window.speechSynthesis.pause();
+  ttsPaused = true;
+  document.getElementById('audio-play-btn').textContent = '▶';
+  document.getElementById('audio-play-btn').classList.remove('playing');
+}
+function resumeLearnAudio() {
+  window.speechSynthesis.resume();
+  ttsPaused = false;
+  document.getElementById('audio-play-btn').textContent = '⏸';
+  document.getElementById('audio-play-btn').classList.add('playing');
+}
+function stopLearnAudio() {
+  window.speechSynthesis.cancel();
+  ttsPaused = false;
+  document.getElementById('audio-prog').style.width = '0%';
+  document.getElementById('audio-play-btn').textContent = '▶';
+  document.getElementById('audio-play-btn').classList.remove('playing');
+  document.getElementById('audio-time').textContent = '0:00';
+}
+function estimateSeconds(txt) { return Math.round(txt.split(' ').length / 2.8); }
+function fmtTime(s) { return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+
+document.getElementById('audio-play-btn').addEventListener('click', () => {
+  if (!window.speechSynthesis) { alert('Speech synthesis not supported in this browser.'); return; }
+  const isSpeaking = window.speechSynthesis.speaking;
+  if (isSpeaking && !ttsPaused) { pauseLearnAudio(); }
+  else if (isSpeaking && ttsPaused) { resumeLearnAudio(); }
+  else { if (S.currentEduKey) startLearnAudio(S.currentEduKey); }
+});
+
+// Speed control
+const speeds = [0.75, 1, 1.25, 1.5, 2];
+let speedIdx = 1;
+document.getElementById('audio-speed-btn').addEventListener('click', () => {
+  speedIdx = (speedIdx + 1) % speeds.length;
+  S.ttsSpeed = speeds[speedIdx];
+  document.getElementById('audio-speed-btn').textContent = S.ttsSpeed + '×';
+  if (window.speechSynthesis.speaking) {
+    const wasKey = S.currentEduKey;
+    stopLearnAudio();
+    setTimeout(() => startLearnAudio(wasKey), 100);
+  }
+});
+
+/* ─────────────────────────────────────────
+   LEARN PAGE
+───────────────────────────────────────── */
+const learnColors = {
+  measurement:'linear-gradient(135deg,#667eea,#764ba2)',
+  hypertension:'linear-gradient(135deg,#4DB6AC,#26A69A)',
+  consequences:'linear-gradient(135deg,#ff6b6b,#c0392b)',
+  healthy:'linear-gradient(135deg,#56ab2f,#a8e063)',
+  avoid:'linear-gradient(135deg,#f093fb,#f5576c)',
+  hrv:'linear-gradient(135deg,#5C6BC0,#3F51B5)',
+  stress:'linear-gradient(135deg,#f7971e,#ffd200)',
+  bmi:'linear-gradient(135deg,#a18cd1,#fbc2eb)',
+};
+
+function buildLearnGrid() {
+  document.getElementById('learn-grid').innerHTML = Object.entries(EDU).map(([k,v]) => `
+    <div class="ltile" onclick="openEdu('${k}')">
+      <div class="lthumb" style="background:${learnColors[k]};">
+        <div class="lthumb-ico">${v.icon}</div>
+      </div>
+      <div class="ltile-body">
+        <div class="ltile-title">${v.title}</div>
+        <span class="learn-chip">🎧 Listen &amp; Learn</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openEdu(key) {
+  const ed = EDU[key];
+  S.currentEduKey = key;
+  stopLearnAudio();
+
+  document.getElementById('edu-icon').textContent = ed.icon;
+  document.getElementById('edu-title').textContent = ed.title;
+  document.getElementById('edu-hdr').style.background = ed.color;
+  document.getElementById('edu-body').innerHTML = ed.body;
+  document.getElementById('audio-time').textContent = fmtTime(estimateSeconds(ed.narration));
+  document.getElementById('edu-modal').classList.add('show');
+
+  if (S.autoReadOn) setTimeout(() => startLearnAudio(key), 600);
+}
+
+document.getElementById('edu-close').addEventListener('click', () => {
+  stopLearnAudio();
+  document.getElementById('edu-modal').classList.remove('show');
+});
+document.getElementById('edu-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) { stopLearnAudio(); e.currentTarget.classList.remove('show'); }
+});
+
+/* ─────────────────────────────────────────
+   BMI
+───────────────────────────────────────── */
+['height','weight'].forEach(id => document.getElementById(id).addEventListener('input', calcBMI));
+function calcBMI() {
+  const h = parseFloat(document.getElementById('height').value)/100;
+  const w = parseFloat(document.getElementById('weight').value);
+  const el = document.getElementById('bmi-pill');
+  if (h>0&&w>0) {
+    const b = (w/(h*h)).toFixed(1);
+    const c = b<18.5?'Underweight':b<25?'Normal weight':b<30?'Overweight':'Obese';
+    el.textContent = `${b} — ${c}`;
+  } else el.textContent = '— Auto-calculated';
+}
+
+/* ─────────────────────────────────────────
+   CAMERA & RECORDING
+───────────────────────────────────────── */
+document.getElementById('start-cam-btn').addEventListener('click', async () => {
+  try {
+    S.stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+    document.getElementById('vid').srcObject = S.stream;
+    document.getElementById('vid-shell').classList.add('cam-on');
+    document.getElementById('start-cam-btn').disabled = true;
+    document.getElementById('rec-btn').disabled = false;
+    msg('s', '✅ Camera ready! Cover the lens with your fingertip.');
+    vibrate([20]);
+    startPPGWave();
+    if (S.hbOn) S.hbInterval = setInterval(heartbeatSound, 857);
+  } catch(e) {
+    msg('e', '⚠️ Camera access denied. Please allow camera permissions.');
+  }
+});
+
+// Fake PPG waveform
+function startPPGWave() {
+  const cv = document.getElementById('waveform');
+  const ctx = cv.getContext('2d');
+  cv.width = cv.offsetWidth * devicePixelRatio;
+  cv.height = 54 * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  S.waveCtx = ctx; S.waveData = Array(160).fill(27);
+  let t = 0;
+  S.waveAnim = setInterval(() => {
+    t += 0.14;
+    const pulse = Math.max(0, Math.sin(t)**14) * 30;
+    S.waveData.push(27 - pulse + (Math.random()-.5)*3);
+    if (S.waveData.length > 160) S.waveData.shift();
+    const w = cv.offsetWidth, h = 54, d = S.waveData;
+    ctx.clearRect(0,0,w,h);
+    const brand = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim()||'#4DB6AC';
+    ctx.strokeStyle = brand; ctx.lineWidth = 1.8;
+    ctx.shadowBlur = 5; ctx.shadowColor = brand;
+    ctx.beginPath();
+    d.forEach((v,i) => { const x=(i/(d.length-1))*w; i===0?ctx.moveTo(x,v):ctx.lineTo(x,v); });
+    ctx.stroke(); ctx.shadowBlur=0;
+  }, 18);
+}
+
+document.getElementById('flash-btn').addEventListener('click', async () => {
+  if (!S.stream) { msg('e','Start the camera first.'); return; }
+  try {
+    S.flashOn = !S.flashOn;
+    await S.stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:S.flashOn}]});
+    document.getElementById('flash-btn').classList.toggle('flash-on', S.flashOn);
+    document.getElementById('flash-btn').textContent = S.flashOn ? '🔦 Flashlight On' : '🔦 Flashlight';
+    vibrate([20]);
+  } catch(e) { msg('e','Flashlight not supported on this device.'); }
+});
+
+document.getElementById('rec-btn').addEventListener('click', () => {
+  S.chunks = [];
+  S.recorder = new MediaRecorder(S.stream);
+  S.recorder.ondataavailable = e => { if(e.data.size>0) S.chunks.push(e.data); };
+  S.recorder.onstop = onRecordStop;
+  S.recorder.start();
+  S.recording = true; S.startTime = Date.now();
+  document.getElementById('timer-row').style.display = 'flex';
+  document.getElementById('rec-btn').disabled = true;
+  document.getElementById('stop-btn').disabled = false;
+  beep(880,.05,.18); vibrate([25,10,25]);
+  S.timerInt = setInterval(() => {
+    const e = Math.floor((Date.now()-S.startTime)/1000);
+    document.getElementById('timer-txt').textContent = e+'s';
+    document.getElementById('prog-fill').style.width = Math.min(e/10*100,100)+'%';
+    if (e>=10) document.getElementById('stop-btn').click();
+  },100);
+});
+
+document.getElementById('stop-btn').addEventListener('click', () => {
+  if (S.recorder && S.recording) { S.recorder.stop(); S.recording=false; clearInterval(S.timerInt); }
+});
+
+function onRecordStop() {
+  document.getElementById('rec-btn').disabled = false;
+  document.getElementById('stop-btn').disabled = true;
+  document.getElementById('analyze-btn').disabled = false;
+  document.getElementById('timer-row').style.display = 'none';
+  msg('s','✅ Recording complete! Press Analyse when ready.');
+  beep(660,.07,.14); setTimeout(()=>beep(880,.07,.14),90);
+  vibrate([50]);
+}
+
+/* ─────────────────────────────────────────
+   ANALYSE
+───────────────────────────────────────── */
+document.getElementById('analyze-btn').addEventListener('click', async () => {
+  const age=document.getElementById('age').value;
+  const ht=document.getElementById('height').value;
+  const wt=document.getElementById('weight').value;
+  const sx=document.getElementById('sex').value;
+  if (!age||!ht||!wt||!sx) { msg('e','Please fill in all personal info fields.'); return; }
+  if (!S.chunks.length) { msg('e','No recording found. Please record first.'); return; }
+
+  document.getElementById('ld').style.display='block';
+  document.getElementById('result-panel').classList.remove('show');
+  clearMsgs(); vibrate([20]);
+
+  const blob = new Blob(S.chunks,{type:'video/webm'});
+  const fd = new FormData();
+  fd.append('video',blob,'rec.webm'); fd.append('age',age);
+  fd.append('height',ht); fd.append('weight',wt); fd.append('sex',sx);
+
+  try {
+    const res = await fetch('/process',{method:'POST',body:fd});
+    const d = await res.json();
+    document.getElementById('ld').style.display='none';
+    if (d.success) {
+      const m = {
+        timestamp: new Date().toISOString(),
+        sbp:d.sbp, dbp:d.dbp, pulse:d.pulse, hrv:d.hrv,
+        stress:d.stress?.stress_level||'—',
+        signal:d.signal_quality?.quality_score||'—',
+        category:d.category, description:d.description,
+      };
+      S.measurements.unshift(m);
+      localStorage.setItem('piq_m', JSON.stringify(S.measurements));
+      showResult(m); updateHomeMetrics(); addAlert(m); refreshAlertBadge();
+      if (S.hbOn && S.hbInterval) {
+        clearInterval(S.hbInterval);
+        S.hbInterval = setInterval(heartbeatSound, 60000/(m.pulse||70));
+      }
+    } else throw new Error(d.error);
+  } catch(e) {
+    document.getElementById('ld').style.display='none';
+    msg('e','⚠️ Analysis failed. Please try again or check server connection.');
+  }
+});
+
+function showResult(m) {
+  document.getElementById('r-bp').textContent = `${m.sbp}/${m.dbp}`;
+  document.getElementById('r-cat').textContent = m.category||'—';
+  document.getElementById('r-pulse').textContent = m.pulse||'—';
+  document.getElementById('r-hrv').textContent = m.hrv||'—';
+  document.getElementById('r-stress').textContent = m.stress||'—';
+  document.getElementById('r-advice').textContent = bpAdvice(m.sbp, m.dbp);
+  document.getElementById('result-panel').classList.add('show');
+  beep(523,.09,.18); setTimeout(()=>beep(659,.09,.18),110); setTimeout(()=>beep(784,.12,.18),220);
+  vibrate([30,15,60]);
+  if (S.voiceOn) {
+    setTimeout(()=>speak(
+      `Measurement complete. Blood pressure ${m.sbp} over ${m.dbp} millimetres of mercury. ${m.category}. Pulse: ${m.pulse} beats per minute. Stress score: ${m.stress} out of 10.`
+    ),500);
+  }
+}
+
+function bpAdvice(sbp,dbp) {
+  if (sbp<120&&dbp<80) return 'Your blood pressure is in the healthy normal range. Keep up your current lifestyle!';
+  if (sbp<130&&dbp<80) return 'Slightly elevated. Consider reducing sodium intake and adding more physical activity.';
+  if (sbp<140||dbp<90) return 'Stage 1 hypertension range. Lifestyle changes are important. Consult your doctor if this persists.';
+  if (sbp<180||dbp<120) return 'Stage 2 hypertension range. Medical evaluation is recommended — do not delay seeing a doctor.';
+  return '⚠️ Hypertensive crisis range. If you feel unwell — headache, chest pain, or vision changes — seek emergency care immediately.';
+}
+
+/* Result action buttons */
+document.getElementById('copy-btn').addEventListener('click', () => {
+  const m = S.measurements[0]; if(!m)return;
+  const txt = `PulseIQ — ${new Date(m.timestamp).toLocaleString()}\nBP: ${m.sbp}/${m.dbp} mmHg (${m.category})\nPulse: ${m.pulse} bpm | HRV: ${m.hrv} ms | Stress: ${m.stress}/10`;
+  navigator.clipboard.writeText(txt).then(()=>msg('s','Result copied to clipboard!'));
+});
+document.getElementById('speak-btn').addEventListener('click', function() {
+  const m = S.measurements[0]; if(!m)return;
+  const isSpeaking = window.speechSynthesis?.speaking;
+  if (isSpeaking) { window.speechSynthesis.cancel(); this.classList.remove('speaking'); return; }
+  this.classList.add('speaking');
+  const u = new SpeechSynthesisUtterance(
+    `Blood pressure ${m.sbp} over ${m.dbp}. ${m.category}. Pulse: ${m.pulse} beats per minute. Heart rate variability: ${m.hrv} milliseconds. Stress score: ${m.stress} out of 10. ${bpAdvice(m.sbp,m.dbp)}`
+  );
+  u.rate=0.92; u.onend=()=>this.classList.remove('speaking');
+  window.speechSynthesis.speak(u);
+});
+document.getElementById('share-btn').addEventListener('click', async () => {
+  const m = S.measurements[0]; if(!m)return;
+  const txt = `My PulseIQ reading:\nBP: ${m.sbp}/${m.dbp} mmHg (${m.category})\nPulse: ${m.pulse} bpm | HRV: ${m.hrv} ms`;
+  if (navigator.share) { try { await navigator.share({title:'PulseIQ Result',text:txt}); } catch(e){} }
+  else { navigator.clipboard.writeText(txt); msg('s','Copied to clipboard (share not supported).'); }
+});
+
+/* ─────────────────────────────────────────
+   SPARKLINE
+───────────────────────────────────────── */
+function drawSparkline() {
+  const cv = document.getElementById('sparkline');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.offsetWidth||300, H = 56;
+  cv.width = W*devicePixelRatio; cv.height = H*devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  ctx.clearRect(0,0,W,H);
+
+  const data = S.measurements.slice(0,10).reverse();
+  const brand = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim()||'#4DB6AC';
+  const warn = getComputedStyle(document.documentElement).getPropertyValue('--warn').trim()||'#f59e0b';
+
+  if (data.length < 2) {
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim()||'#888';
+    ctx.font = `12px DM Sans`; ctx.textAlign='center';
+    ctx.fillText('No data — take your first measurement', W/2, H/2+4);
+    document.getElementById('bp-badge').textContent = 'No data';
+    return;
+  }
+
+  const sbps=data.map(d=>d.sbp), dbps=data.map(d=>d.dbp);
+  const allV=[...sbps,...dbps];
+  const mn=Math.min(...allV)-6, mx=Math.max(...allV)+6;
+  const sc=v=>H-((v-mn)/(mx-mn))*H;
+  const sx=i=>(i/(data.length-1))*W;
+
+  // Gradient fill under SBP
+  const grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,brand+'44'); grd.addColorStop(1,brand+'00');
+  ctx.fillStyle=grd;
+  ctx.beginPath(); ctx.moveTo(sx(0),sc(sbps[0]));
+  sbps.forEach((v,i)=>ctx.lineTo(sx(i),sc(v)));
+  ctx.lineTo(sx(data.length-1),H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+
+  // SBP line
+  ctx.strokeStyle=brand; ctx.lineWidth=2; ctx.lineJoin='round';
+  ctx.shadowBlur=4; ctx.shadowColor=brand;
+  ctx.beginPath(); sbps.forEach((v,i)=>i===0?ctx.moveTo(sx(i),sc(v)):ctx.lineTo(sx(i),sc(v))); ctx.stroke();
+
+  // DBP dashed
+  ctx.strokeStyle=warn; ctx.shadowColor=warn;
+  ctx.setLineDash([4,3]);
+  ctx.beginPath(); dbps.forEach((v,i)=>i===0?ctx.moveTo(sx(i),sc(v)):ctx.lineTo(sx(i),sc(v))); ctx.stroke();
+  ctx.setLineDash([]); ctx.shadowBlur=0;
+
+  // Dots at last point
+  [sbps,dbps].forEach((arr,ci) => {
+    const x=sx(arr.length-1), y=sc(arr[arr.length-1]);
+    ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2);
+    ctx.fillStyle=ci===0?brand:warn; ctx.fill();
+  });
+
+  const lat=S.measurements[0];
+  document.getElementById('bp-badge').textContent = lat.category||`${lat.sbp}/${lat.dbp}`;
+}
+
+/* ─────────────────────────────────────────
+   HOME METRICS
+───────────────────────────────────────── */
+function updateHomeMetrics() {
+  const m = S.measurements[0];
+  document.getElementById('h-pulse').textContent = m?.pulse??'--';
+  document.getElementById('h-hrv').textContent = m?.hrv??'--';
+  document.getElementById('h-stress').textContent = m?.stress??'--';
+}
+
+function setDailyTip() {
+  document.getElementById('tip-txt').textContent = TIPS[new Date().getDate() % TIPS.length];
+}
+
+/* ─────────────────────────────────────────
+   CALENDAR & HISTORY
+───────────────────────────────────────── */
+document.getElementById('prev-mo').addEventListener('click',()=>{S.calDate.setMonth(S.calDate.getMonth()-1);renderCal();computeStats();});
+document.getElementById('next-mo').addEventListener('click',()=>{S.calDate.setMonth(S.calDate.getMonth()+1);renderCal();computeStats();});
+
+function renderCal() {
+  const y=S.calDate.getFullYear(), mo=S.calDate.getMonth();
+  document.getElementById('cal-mo-lbl').textContent = new Date(y,mo).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const fd=new Date(y,mo,1).getDay(), days=new Date(y,mo+1,0).getDate();
+  const adj=fd===0?6:fd-1;
+  let h=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="cdn">${d}</div>`).join('');
+  for(let i=0;i<adj;i++) h+=`<div class="cd other"></div>`;
+  for(let d=1;d<=days;d++){
+    const ds=`${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hd=S.measurements.some(m=>m.timestamp.startsWith(ds));
+    const it=new Date().toDateString()===new Date(y,mo,d).toDateString();
+    h+=`<div class="cd${hd?' has-data':''}${it?' today':''}">${d}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=h;
+}
+
+function renderHistory() {
+  const el=document.getElementById('history-list');
+  if (!S.measurements.length) {
+    el.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">No measurements yet</div></div>';return;
+  }
+  el.innerHTML=S.measurements.slice(0,25).map((m,i)=>{
+    const t=new Date(m.timestamp);
+    return `<div class="hitem" id="hi${i}">
+      <div class="hitem-top" onclick="tgH(${i})">
+        <div class="hbp">${m.sbp}/${m.dbp}</div>
+        <div class="hinfo">
+          <div class="htime">${t.toLocaleDateString()} · ${t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+          <div class="hcat">${m.category||'—'}</div>
         </div>
+        <div class="hchev">⌄</div>
+      </div>
+      <div class="hdetails">
+        <div class="hdc"><div class="hdcv">${m.pulse||'—'}</div><div class="hdcl">Pulse bpm</div></div>
+        <div class="hdc"><div class="hdcv">${m.hrv||'—'}</div><div class="hdcl">HRV ms</div></div>
+        <div class="hdc"><div class="hdcv">${m.stress||'—'}</div><div class="hdcl">Stress</div></div>
+        <div class="hdc"><div class="hdcv">${m.signal||'—'}</div><div class="hdcl">Signal %</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function tgH(i) { document.getElementById('hi'+i)?.classList.toggle('open'); }
+
+function computeStats() {
+  const y=S.calDate.getFullYear(), mo=S.calDate.getMonth();
+  const md=S.measurements.filter(m=>{const d=new Date(m.timestamp);return d.getFullYear()===y&&d.getMonth()===mo;});
+  document.getElementById('total-r').textContent=md.length;
+  if (!md.length) { ['avg-sbp','avg-dbp','avg-pulse'].forEach(id=>document.getElementById(id).textContent='—'); return; }
+  const avg=k=>Math.round(md.reduce((a,m)=>a+(parseFloat(m[k])||0),0)/md.length);
+  document.getElementById('avg-sbp').textContent=avg('sbp');
+  document.getElementById('avg-dbp').textContent=avg('dbp');
+  document.getElementById('avg-pulse').textContent=avg('pulse');
+}
+
+/* ─────────────────────────────────────────
+   ALERTS
+───────────────────────────────────────── */
+function addAlert(m) {
+  const al=JSON.parse(localStorage.getItem('piq_al')||'[]');
+  let type='ok', icon='✅', title='Measurement Recorded';
+  if (m.sbp>=180||m.dbp>=120) { type='warn'; icon='🚨'; title='Hypertensive Crisis Range'; }
+  else if (m.sbp>=140||m.dbp>=90) { type='warn'; icon='⚠️'; title='High BP — Stage 2'; }
+  else if (m.sbp>=130) { type='info'; icon='📋'; title='BP Elevated'; }
+  al.unshift({type,icon,title,desc:`BP ${m.sbp}/${m.dbp} mmHg — ${m.category}`,time:new Date().toISOString()});
+  localStorage.setItem('piq_al', JSON.stringify(al.slice(0,40)));
+}
+function refreshAlertBadge() {
+  const al=JSON.parse(localStorage.getItem('piq_al')||'[]');
+  const badge=document.getElementById('alert-badge');
+  const hasWarn=al.some(a=>a.type==='warn');
+  badge.style.display=hasWarn?'block':'none';
+}
+function renderAlerts() {
+  const al=JSON.parse(localStorage.getItem('piq_al')||'[]');
+  const el=document.getElementById('alerts-list');
+  if (!al.length) { el.innerHTML='<div class="empty"><div class="empty-ico">🔔</div><div class="empty-txt">No alerts yet</div></div>';return; }
+  el.innerHTML=al.map(a=>`
+    <div class="alert-item">
+      <div class="aic ${a.type}"><span>${a.icon}</span></div>
+      <div class="aid">
+        <div class="aiti">${a.title}</div>
+        <div class="aidc">${a.desc}</div>
+        <div class="aitm">${new Date(a.time).toLocaleString()}</div>
+      </div>
     </div>
-
-    <!-- Notifications Page -->
-    <div class="page" id="notifications-page">
-        <div class="page-content">
-            <div class="empty-state">
-                <div class="empty-icon">🔔</div>
-                <div>No notifications</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Learn Page -->
-    <div class="page" id="learn-page">
-        <div class="page-content">
-            <div class="learn-grid">
-                <div class="learn-card" onclick="showEducation('measurement')">
-                    <div class="learn-image">📏</div>
-                    <div class="learn-content">
-                        <div class="learn-title">Measurements guide</div>
-                        <button class="learn-btn">LEARN</button>
-                    </div>
-                </div>
-                <div class="learn-card" onclick="showEducation('hypertension')">
-                    <div class="learn-image">🩺</div>
-                    <div class="learn-content">
-                        <div class="learn-title">What is hypertension?</div>
-                        <button class="learn-btn">LEARN</button>
-                    </div>
-                </div>
-                <div class="learn-card" onclick="showEducation('consequences')">
-                    <div class="learn-image">❤️</div>
-                    <div class="learn-content">
-                        <div class="learn-title">Consequences of hypertension</div>
-                        <button class="learn-btn">LEARN</button>
-                    </div>
-                </div>
-                <div class="learn-card" onclick="showEducation('healthy')">
-                    <div class="learn-image">🥗</div>
-                    <div class="learn-content">
-                        <div class="learn-title">Healthy habits</div>
-                        <button class="learn-btn">LEARN</button>
-                    </div>
-                </div>
-                <div class="learn-card" onclick="showEducation('avoid')">
-                    <div class="learn-image">🚫</div>
-                    <div class="learn-content">
-                        <div class="learn-title">What to avoid?</div>
-                        <button class="learn-btn">LEARN</button>
-                    </div>
-                </div>
-                <div class="learn-card" onclick="showEducation('hrv')">
-                    <div class="learn-image">📈</div>
-                    <div class="learn-content">
-                        <div class="learn-title">What is HRV?</div>
-                        <button class="learn-btn">LEARN</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Education Modal -->
-    <div class="edu-modal" id="edu-modal">
-        <div class="edu-modal-content">
-            <div class="edu-modal-header">
-                <button class="edu-close" onclick="closeEducation()">×</button>
-                <h2 id="edu-title"></h2>
-            </div>
-            <div class="edu-modal-body" id="edu-content"></div>
-        </div>
-    </div>
-
-    <!-- Bottom Navigation -->
-    <div class="bottom-nav">
-        <button class="nav-item active" data-page="home">
-            <div class="nav-icon">❤️</div>
-            <div class="nav-label">Home</div>
-        </button>
-        <button class="nav-item" data-page="scan">
-            <div class="nav-icon">📹</div>
-            <div class="nav-label">Scan</div>
-        </button>
-        <button class="nav-item" data-page="diary">
-            <div class="nav-icon">📊</div>
-            <div class="nav-label">Diary</div>
-        </button>
-        <button class="nav-item" data-page="notifications">
-            <div class="nav-icon">🔔</div>
-            <div class="nav-label">Alerts</div>
-        </button>
-        <button class="nav-item" data-page="learn">
-            <div class="nav-icon">📚</div>
-            <div class="nav-label">Learn</div>
-        </button>
-    </div>
-
-    <script>
-        // State
-        const state = {
-            stream: null,
-            mediaRecorder: null,
-            recordedChunks: [],
-            recording: false,
-            recordStartTime: 0,
-            timerInterval: null,
-            currentPage: 'home',
-            currentMonth: new Date(),
-            measurements: JSON.parse(localStorage.getItem('measurements') || '[]'),
-            flashlightOn: false
-        };
-
-        // DOM Elements
-        const pages = document.querySelectorAll('.page');
-        const navItems = document.querySelectorAll('.nav-item');
-        const video = document.getElementById('video');
-        const videoContainer = document.getElementById('video-container');
-        const startCameraBtn = document.getElementById('start-camera');
-        const startRecordBtn = document.getElementById('start-record');
-        const stopRecordBtn = document.getElementById('stop-record');
-        const analyzeBtn = document.getElementById('analyze');
-        const flashlightBtn = document.getElementById('flashlight-btn');
-        const timer = document.getElementById('timer');
-        const progress = document.getElementById('progress');
-        const loading = document.getElementById('loading');
-        const errorMsg = document.getElementById('error-msg');
-        const successMsg = document.getElementById('success-msg');
-        const ageInput = document.getElementById('age');
-        const heightInput = document.getElementById('height');
-        const weightInput = document.getElementById('weight');
-        const bmiInput = document.getElementById('bmi');
-
-        // Navigation
-        navItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const page = item.dataset.page;
-                switchPage(page);
-            });
-        });
-
-        document.getElementById('scan-now-btn').addEventListener('click', () => {
-            switchPage('scan');
-        });
-
-        function switchPage(pageName) {
-            pages.forEach(p => p.classList.remove('active'));
-            navItems.forEach(n => n.classList.remove('active'));
-
-            document.getElementById(`${pageName}-page`).classList.add('active');
-            document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
-            state.currentPage = pageName;
-
-            if (pageName === 'diary') {
-                renderCalendar();
-                renderMeasurements();
-            } else if (pageName === 'home') {
-                updateHomeMetrics();
-            }
-        }
-
-        // BMI Calculation
-        heightInput.addEventListener('input', calculateBMI);
-        weightInput.addEventListener('input', calculateBMI);
-
-        function calculateBMI() {
-            const height = parseFloat(heightInput.value) / 100;
-            const weight = parseFloat(weightInput.value);
-            if (height > 0 && weight > 0) {
-                bmiInput.value = (weight / (height * height)).toFixed(1);
-            }
-        }
-
-        // Flashlight Control
-        flashlightBtn.addEventListener('click', toggleFlashlight);
-
-        async function toggleFlashlight() {
-            try {
-                const action = state.flashlightOn ? 'off' : 'on';
-                
-                const response = await fetch('/flashlight', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ action: action })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    state.flashlightOn = !state.flashlightOn;
-                    updateFlashlightButton();
-                    showSuccess(result.message);
-                } else {
-                    showError('Flashlight control failed');
-                }
-            } catch (error) {
-                console.error('Flashlight error:', error);
-                showError('Flashlight not available on this device');
-            }
-        }
-
-        function updateFlashlightButton() {
-            flashlightBtn.innerHTML = state.flashlightOn ? '🔦 Flashlight On' : '🔦 Flashlight Off';
-            flashlightBtn.classList.toggle('on', state.flashlightOn);
-        }
-
-        // Camera Functions
-        startCameraBtn.addEventListener('click', async () => {
-            try {
-                state.stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' },
-                    audio: false
-                });
-                video.srcObject = state.stream;
-                videoContainer.classList.add('active');
-                startRecordBtn.disabled = false;
-                startCameraBtn.disabled = true;
-                showSuccess('Camera started! Position your fingertip over the lens.');
-            } catch (err) {
-                showError('Could not access camera. Please grant permissions.');
-            }
-        });
-
-        startRecordBtn.addEventListener('click', () => {
-            state.recordedChunks = [];
-            state.mediaRecorder = new MediaRecorder(state.stream);
-
-            state.mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) state.recordedChunks.push(e.data);
-            };
-
-            state.mediaRecorder.onstop = () => {
-                state.recording = false;
-                startRecordBtn.disabled = false;
-                stopRecordBtn.disabled = true;
-                analyzeBtn.disabled = false;
-                timer.style.display = 'none';
-                clearInterval(state.timerInterval);
-                showSuccess('10-second recording complete! Click Analyze.');
-            };
-
-            state.mediaRecorder.start();
-            state.recording = true;
-            startRecordBtn.disabled = true;
-            stopRecordBtn.disabled = false;
-            timer.style.display = 'block';
-            state.recordStartTime = Date.now();
-
-            state.timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - state.recordStartTime) / 1000);
-                timer.textContent = `Recording: ${elapsed}s`;
-                progress.style.width = `${Math.min((elapsed / 10) * 100, 100)}%`;
-
-                if (elapsed >= 10) {
-                    stopRecordBtn.click();
-                }
-            }, 100);
-        });
-
-        stopRecordBtn.addEventListener('click', () => {
-            if (state.mediaRecorder && state.recording) {
-                state.mediaRecorder.stop();
-            }
-        });
-
-        // Analyze
-        analyzeBtn.addEventListener('click', async () => {
-            if (!ageInput.value || !heightInput.value || !weightInput.value) {
-                showError('Please fill in all information fields.');
-                return;
-            }
-
-            if (state.recordedChunks.length === 0) {
-                showError('Please record a video first.');
-                return;
-            }
-
-            loading.style.display = 'block';
-            errorMsg.style.display = 'none';
-            successMsg.style.display = 'none';
-
-            const blob = new Blob(state.recordedChunks, { type: 'video/webm' });
-            const formData = new FormData();
-            formData.append('video', blob, 'recording.webm');
-            formData.append('age', ageInput.value);
-            formData.append('height', heightInput.value);
-            formData.append('weight', weightInput.value);
-            formData.append('bmi', bmiInput.value);
-
-            try {
-                const response = await fetch('/process', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    const measurement = {
-                        timestamp: new Date().toISOString(),
-                        sbp: result.sbp,
-                        dbp: result.dbp,
-                        pulse: result.pulse,
-                        hrv: result.hrv,
-                        stress: result.stress.stress_level,
-                        signal_quality: result.signal_quality,
-                        category: result.category,
-                        description: result.description
-                    };
-
-                    state.measurements.unshift(measurement);
-                    localStorage.setItem('measurements', JSON.stringify(state.measurements));
-
-                    loading.style.display = 'none';
-                    
-                    // Show comprehensive results
-                    showSuccess(`
-                        BP: ${result.sbp}/${result.dbp} mmHg - ${result.category}
-                        Pulse: ${result.pulse} BPM | HRV: ${result.hrv} ms
-                        Stress: ${result.stress.stress_level}/10
-                        Signal Quality: ${result.signal_quality.quality_score}%
-                    `);
-                    
-                    // Update home metrics immediately
-                    updateHomeMetrics();
-                    
-                    // Switch to diary to show result
-                    setTimeout(() => switchPage('diary'), 2000);
-
-                } else {
-                    throw new Error(result.error);
-                }
-
-            } catch (err) {
-                loading.style.display = 'none';
-                showError('Processing failed. Please try again.');
-                console.error('Analysis error:', err);
-            }
-        });
-
-        function classifyBP(sbp, dbp) {
-            if (sbp < 120 && dbp < 80) return 'Normal';
-            if (sbp < 130 && dbp < 80) return 'Elevated';
-            if (sbp < 140 || dbp < 90) return 'Stage 1 Hypertension';
-            if (sbp < 180 || dbp < 120) return 'Stage 2 Hypertension';
-            return 'Hypertensive Crisis';
-        }
-
-        // Messages
-        function showError(msg) {
-            errorMsg.textContent = msg;
-            errorMsg.style.display = 'block';
-            successMsg.style.display = 'none';
-            setTimeout(() => errorMsg.style.display = 'none', 5000);
-        }
-
-        function showSuccess(msg) {
-            successMsg.textContent = msg;
-            successMsg.style.display = 'block';
-            errorMsg.style.display = 'none';
-            setTimeout(() => successMsg.style.display = 'none', 5000);
-        }
-
-        // Calendar
-        function renderCalendar() {
-            const calendar = document.getElementById('calendar');
-            const year = state.currentMonth.getFullYear();
-            const month = state.currentMonth.getMonth();
-            
-            document.getElementById('current-month').textContent = 
-                new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            
-            let html = '';
-            ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(day => {
-                html += `<div class="calendar-day-name">${day}</div>`;
-            });
-
-            const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
-            
-            for (let i = 0; i < adjustedFirstDay; i++) {
-                html += `<div class="calendar-day other-month"></div>`;
-            }
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(year, month, day);
-                const dateStr = date.toISOString().split('T')[0];
-                const hasData = state.measurements.some(m => m.timestamp.startsWith(dateStr));
-                const isToday = new Date().toDateString() === date.toDateString();
-                
-                html += `<div class="calendar-day ${hasData ? 'has-data' : ''} ${isToday ? 'selected' : ''}">${day}</div>`;
-            }
-
-            calendar.innerHTML = html;
-        }
-
-        document.getElementById('prev-month').addEventListener('click', () => {
-            state.currentMonth.setMonth(state.currentMonth.getMonth() - 1);
-            renderCalendar();
-        });
-
-        document.getElementById('next-month').addEventListener('click', () => {
-            state.currentMonth.setMonth(state.currentMonth.getMonth() + 1);
-            renderCalendar();
-        });
-
-        // Render Measurements
-        function renderMeasurements() {
-            const list = document.getElementById('measurements-list');
-            
-            if (state.measurements.length === 0) {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📋</div>
-                        <div>No measurements yet</div>
-                    </div>
-                `;
-                return;
-            }
-
-            const today = state.measurements.filter(m => {
-                const mDate = new Date(m.timestamp).toDateString();
-                return mDate === new Date().toDateString();
-            });
-
-            if (today.length === 0) {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📋</div>
-                        <div>No measurements for today</div>
-                    </div>
-                `;
-                return;
-            }
-
-            list.innerHTML = today.map(m => {
-                const time = new Date(m.timestamp).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-
-                return `
-                    <div class="measurement-detail">
-                        <div class="detail-header">
-                            <strong>BLOOD PRESSURE READING</strong>
-                            <span class="detail-time">${new Date(m.timestamp).toLocaleDateString()} ${time}</span>
-                        </div>
-                        <div class="bp-readings">
-                            <div class="reading-card">
-                                <div class="reading-icon">💓</div>
-                                <div class="reading-label">Systolic BP</div>
-                                <div class="reading-value">${m.sbp}</div>
-                                <div class="reading-unit">mmHg</div>
-                                <div class="metric-status">${m.category}</div>
-                            </div>
-                            <div class="reading-card">
-                                <div class="reading-icon">💓</div>
-                                <div class="reading-label">Diastolic BP</div>
-                                <div class="reading-value">${m.dbp}</div>
-                                <div class="reading-unit">mmHg</div>
-                                <div class="metric-status">${m.description}</div>
-                            </div>
-                        </div>
-                        <div class="vitals-grid">
-                            <div class="vital-item">
-                                <div class="vital-icon">📈</div>
-                                <div class="vital-info">
-                                    <div class="vital-label">Pulse</div>
-                                    <div class="vital-value">${m.pulse} <span style="font-size: 0.8rem; font-weight: normal;">bpm</span></div>
-                                </div>
-                            </div>
-                            <div class="vital-item">
-                                <div class="vital-icon">🔄</div>
-                                <div class="vital-info">
-                                    <div class="vital-label">HRV</div>
-                                    <div class="vital-value">${m.hrv} <span style="font-size: 0.8rem; font-weight: normal;">ms</span></div>
-                                </div>
-                            </div>
-                            <div class="vital-item">
-                                <div class="vital-icon">😰</div>
-                                <div class="vital-info">
-                                    <div class="vital-label">Stress</div>
-                                    <div class="vital-value">${m.stress} <span style="font-size: 0.8rem; font-weight: normal;">/10</span></div>
-                                </div>
-                            </div>
-                            <div class="vital-item">
-                                <div class="vital-icon">📊</div>
-                                <div class="vital-info">
-                                    <div class="vital-label">Signal Quality</div>
-                                    <div class="vital-value">${m.signal_quality ? m.signal_quality.quality_score : '--'} <span style="font-size: 0.8rem; font-weight: normal;">%</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Update Home Metrics
-        function updateHomeMetrics() {
-            if (state.measurements.length > 0) {
-                const latest = state.measurements[0];
-                document.getElementById('home-pulse').textContent = latest.pulse || '--';
-                document.getElementById('home-hrv').textContent = latest.hrv || '--';
-                document.getElementById('home-stress').textContent = latest.stress || '--';
-            }
-        }
-
-        // Education Content
-        const educationContent = {
-            measurement: {
-                title: 'Measurements Guide',
-                content: `
-                    <h3>📏 How to Take Accurate Measurements</h3>
-                    <p><strong>Preparation:</strong> Sit and rest for at least 5 minutes to stabilize your heart rate and blood pressure before taking measurements.</p>
-                    
-                    <h3>🎯 Proper Technique</h3>
-                    <p>1. Find a quiet, well-lit area</p>
-                    <p>2. Sit comfortably with your back supported</p>
-                    <p>3. Place your fingertip gently over the camera lens</p>
-                    <p>4. Keep your finger still during the 10-second recording</p>
-                    <p>5. Breathe normally and stay relaxed</p>
-
-                    <h3>⏰ Best Times to Measure</h3>
-                    <p>• In the morning before breakfast</p>
-                    <p>• In the evening before dinner</p>
-                    <p>• Avoid measurements after exercise, caffeine, or stress</p>
-                `
-            },
-            hypertension: {
-                title: 'What is Hypertension?',
-                content: `
-                    <h3>🩺 Understanding High Blood Pressure</h3>
-                    <p>Hypertension, or high blood pressure, occurs when the force of blood against artery walls is consistently too high. This can damage blood vessels and organs over time.</p>
-
-                    <h3>📊 Blood Pressure Categories</h3>
-                    <p><strong>Normal:</strong> Less than 120/80 mmHg</p>
-                    <p><strong>Elevated:</strong> 120-129 systolic and less than 80 diastolic</p>
-                    <p><strong>Stage 1:</strong> 130-139 systolic or 80-89 diastolic</p>
-                    <p><strong>Stage 2:</strong> 140+ systolic or 90+ diastolic</p>
-
-                    <h3>⚠️ Risk Factors</h3>
-                    <p>• Age (risk increases with age)</p>
-                    <p>• Family history</p>
-                    <p>• Obesity</p>
-                    <p>• Lack of physical activity</p>
-                    <p>• High salt intake</p>
-                    <p>• Excessive alcohol consumption</p>
-                    <p>• Stress</p>
-                `
-            },
-            consequences: {
-                title: 'Consequences of Hypertension',
-                content: `
-                    <h3>❤️ Health Impact</h3>
-                    <p>Uncontrolled hypertension can lead to serious health complications affecting multiple organ systems.</p>
-
-                    <h3>🫀 Heart and Blood Vessels</h3>
-                    <p>• Heart attack and heart failure</p>
-                    <p>• Stroke</p>
-                    <p>• Aneurysm</p>
-                    <p>• Coronary artery disease</p>
-
-                    <h3>🧠 Brain</h3>
-                    <p>• Memory problems</p>
-                    <p>• Dementia</p>
-                    <p>• Transient ischemic attack (TIA)</p>
-
-                    <h3>👁️ Eyes</h3>
-                    <p>• Damage to blood vessels in eyes</p>
-                    <p>• Vision loss</p>
-
-                    <h3>🩺 Kidneys</h3>
-                    <p>• Kidney disease</p>
-                    <p>• Kidney failure</p>
-
-                    <p><strong>Important:</strong> Regular monitoring and early intervention can prevent these complications.</p>
-                `
-            },
-            healthy: {
-                title: 'Healthy Habits',
-                content: `
-                    <h3>🥗 Dietary Changes</h3>
-                    <p><strong>DASH Diet:</strong> Dietary Approaches to Stop Hypertension</p>
-                    <p>• Eat plenty of fruits and vegetables</p>
-                    <p>• Choose whole grains</p>
-                    <p>• Include lean proteins (fish, poultry, beans)</p>
-                    <p>• Limit saturated fats and cholesterol</p>
-                    <p>• Reduce sodium intake (less than 2,300mg per day)</p>
-
-                    <h3>🏃 Physical Activity</h3>
-                    <p>• At least 150 minutes of moderate exercise weekly</p>
-                    <p>• Walking, swimming, cycling</p>
-                    <p>• Strength training 2 days per week</p>
-
-                    <h3>⚖️ Weight Management</h3>
-                    <p>• Maintain a healthy BMI (18.5-24.9)</p>
-                    <p>• Even 5-10 pounds of weight loss can help</p>
-
-                    <h3>😌 Stress Management</h3>
-                    <p>• Practice meditation or deep breathing</p>
-                    <p>• Get adequate sleep (7-9 hours)</p>
-                    <p>• Engage in hobbies and relaxation</p>
-                `
-            },
-            avoid: {
-                title: 'What to Avoid',
-                content: `
-                    <h3>🚫 Harmful Habits</h3>
-                    
-                    <h3>🚬 Smoking</h3>
-                    <p>Smoking raises blood pressure and damages blood vessel walls. Each cigarette causes an immediate temporary increase in blood pressure.</p>
-
-                    <h3>🍺 Excessive Alcohol</h3>
-                    <p>• Limit to 1 drink per day for women</p>
-                    <p>• Limit to 2 drinks per day for men</p>
-                    <p>• Heavy drinking can lead to resistant hypertension</p>
-
-                    <h3>🧂 High Sodium Foods</h3>
-                    <p>• Processed and packaged foods</p>
-                    <p>• Fast food</p>
-                    <p>• Canned soups and vegetables</p>
-                    <p>• Deli meats</p>
-                    <p>• Salty snacks</p>
-
-                    <h3>☕ Caffeine</h3>
-                    <p>• Can cause short-term spikes in blood pressure</p>
-                    <p>• Limit coffee to 2-3 cups daily</p>
-
-                    <h3>😰 Chronic Stress</h3>
-                    <p>• Prolonged stress elevates cortisol and blood pressure</p>
-                    <p>• Practice stress-reduction techniques</p>
-                `
-            },
-            hrv: {
-                title: 'What is HRV?',
-                content: `
-                    <h3>📈 Heart Rate Variability</h3>
-                    <p>HRV measures the variation in time between consecutive heartbeats. It's an important indicator of cardiovascular health and stress levels.</p>
-
-                    <h3>💡 Why It Matters</h3>
-                    <p><strong>Higher HRV:</strong> Indicates better cardiovascular fitness and stress resilience</p>
-                    <p><strong>Lower HRV:</strong> May indicate stress, fatigue, or health issues</p>
-
-                    <h3>📊 Normal Ranges</h3>
-                    <p>• Young adults: 55-105 ms</p>
-                    <p>• Middle-aged: 25-45 ms</p>
-                    <p>• Elderly: 15-25 ms</p>
-                    <p>Note: Values vary by age, fitness level, and measurement method</p>
-
-                    <h3>✅ Improving HRV</h3>
-                    <p>• Regular exercise</p>
-                    <p>• Adequate sleep</p>
-                    <p>• Stress management</p>
-                    <p>• Healthy diet</p>
-                    <p>• Meditation and breathing exercises</p>
-                `
-            }
-        };
-
-        function showEducation(topic) {
-            const modal = document.getElementById('edu-modal');
-            const content = educationContent[topic];
-            
-            document.getElementById('edu-title').textContent = content.title;
-            document.getElementById('edu-content').innerHTML = content.content;
-            modal.classList.add('active');
-        }
-
-        function closeEducation() {
-            document.getElementById('edu-modal').classList.remove('active');
-        }
-
-        // Close modal on outside click
-        document.getElementById('edu-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'edu-modal') {
-                closeEducation();
-            }
-        });
-
-        // Initialize
-        updateHomeMetrics();
-    </script>
+  `).join('');
+}
+
+/* ─────────────────────────────────────────
+   MSG HELPERS
+───────────────────────────────────────── */
+function msg(t,txt) {
+  const e=document.getElementById('emsg'), s=document.getElementById('smsg');
+  if(t==='e'){e.textContent=txt;e.style.display='block';s.style.display='none';}
+  else{s.textContent=txt;s.style.display='block';e.style.display='none';}
+  setTimeout(()=>{e.style.display='none';s.style.display='none';},5500);
+}
+function clearMsgs(){['emsg','smsg'].forEach(id=>document.getElementById(id).style.display='none');}
+</script>
 </body>
 </html>
